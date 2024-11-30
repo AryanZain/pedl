@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "449185016332",
+    "project_id": "pedl-7fbe4",
+    "storage_bucket": "pedl-7fbe4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:449185016332:android:c7bf6eb1f6f441047d5c29",
+        "android_client_info": {
+          "package_name": "com.example.pedl"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDleBpHTDHvi_6mXCjEU2L3VIUThaQgOKM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

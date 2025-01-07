@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pedl/profile.dart';
 import 'package:pedl/services/auth.dart';
 import 'package:pedl/signin.dart';
+import 'package:pedl/bike.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -79,25 +80,25 @@ class _SideMenu extends StatelessWidget {
             ),
           ),
           ListTile(
-            leading: Icon(Icons.person),
-            title: Text("My Profile"),
-            onTap: () async{
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ProfilePage(
-                    userName: "Zain Ul Abideen",
-                    aboutMe: "Enter Your Description",
-                    interests: ["Games Online", "Music"],
+              leading: Icon(Icons.person),
+              title: Text("My Profile"),
+              onTap: () async{
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfilePage(
+                      userName: "Zain Ul Abideen",
+                      aboutMe: "Enter Your Description",
+                      interests: ["Games Online", "Music"],
+                    ),
                   ),
-                ),
-              );
-              /*Navigator.of(context).pushReplacement(
+                );
+                /*Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                   builder: (context) => const ProfilePage(),
                 ),
               );*/
-            }
+              }
           ),
           ListTile(
             leading: Icon(Icons.notifications),
@@ -293,7 +294,7 @@ class _Card extends StatelessWidget {
   final VoidCallback onClick;
 
   _Card({required this.title, required this.subtitle, required this.onClick});
-
+//HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -302,7 +303,14 @@ class _Card extends StatelessWidget {
       child: Card(
         elevation: 3,
         child: InkWell(
-          onTap: onClick,
+          onTap: () async {
+            await AuthServices().signOut();
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const BikeDetailsApp(),
+              ),
+            );
+          },
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

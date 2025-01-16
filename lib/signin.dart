@@ -1,11 +1,15 @@
 
 import 'package:flutter/material.dart';
+import 'package:pedl/forgotpassword.dart';
 import 'package:pedl/home.dart';
+
 import 'package:pedl/services/auth.dart';
 import 'package:pedl/signup.dart';
 import 'package:pedl/widget/message.dart';
 import 'package:pedl/widget/textfeild.dart';
 import 'package:pedl/widget/button.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SigninScreen extends StatefulWidget {
   const SigninScreen({super.key});
@@ -17,8 +21,12 @@ class SigninScreen extends StatefulWidget {
 class _SignupScreenState extends State<SigninScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  bool isLoading = false;
+  final _firestore = FirebaseFirestore.instance;
+  final _auth = FirebaseAuth.instance;
 
+  bool isLoading = false;
+  //CHANGE ONE
+  @override
   void dispose() {
     super.dispose();
     emailController.dispose();
@@ -35,11 +43,32 @@ class _SignupScreenState extends State<SigninScreen> {
         isLoading = true;
       });
       //navigate to the next screen
-      Navigator.of(context).pushReplacement(
+      try {
+        // Fetch the user's name from Firestore
+        User? user = _auth.currentUser;
+        if (user != null) {
+          DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
+          String userName = userDoc['name'];
+          String userId = user.uid; // Fetch the userId (UID)
+
+          // Navigate to the HomeScreen with the user's name
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => HomeScreen(userName: userName, userId: userId),
+            ),
+          );
+        }
+      } catch (e) {
+        showSnackBar(context, "Failed to fetch user data: $e");
+        setState(() {
+          isLoading = false;
+        });
+      }
+      /*Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => const HomeScreen(),
         ),
-      );
+      );*/
     } else {
       setState(() {
         isLoading = false;
@@ -122,19 +151,28 @@ class _SignupScreenState extends State<SigninScreen> {
                         ),
                       ],
                     ),
-                    Text(
-                      "Forgot Password?",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.black54,
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const ForgotPasswordScreen(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        "Forgot Password?",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.black54,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
           
-
+               // ADDHERE==-=-=-=-=-=-=-=-=-=-=-=-=-=-
               MyButtons(onTap: signinUsers  , text: "SIGN IN"),
               SizedBox(height: height / 10),
               Row(

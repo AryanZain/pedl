@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:pedl/services/profile_picture_manager.dart';
+
 
 class ProfilePage extends StatefulWidget {
   final String userName; // Dynamically passed user name
@@ -19,12 +21,31 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   late String aboutMe;
   late List<String> interests;
+  String? profilePictureUrl;
+  final ProfilePictureManager _profilePictureManager = ProfilePictureManager();
 
   @override
   void initState() {
     super.initState();
     aboutMe = widget.aboutMe;
     interests = widget.interests;
+
+    _loadProfilePicture();
+  }
+
+  void _loadProfilePicture() async {
+    final url = await _profilePictureManager.getProfilePictureUrl();
+    setState(() {
+      profilePictureUrl = url;
+    });
+  }
+  void _uploadProfilePicture() async {
+    final url = await _profilePictureManager.uploadProfilePicture();
+    if (url != null) {
+      setState(() {
+        profilePictureUrl = url;
+      });
+    }
   }
 
   void _editProfile() {
@@ -147,10 +168,18 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.grey,
-                child: Icon(Icons.person, size: 50, color: Colors.white),
+              GestureDetector(
+                onTap: _uploadProfilePicture,
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.grey,
+                  backgroundImage: profilePictureUrl != null
+                      ? NetworkImage(profilePictureUrl!) as ImageProvider
+                      : null,
+                  child: profilePictureUrl == null
+                      ? const Icon(Icons.person, size: 50, color: Colors.white)
+                      : null,
+                ),
               ),
               const SizedBox(height: 16),
               Text(

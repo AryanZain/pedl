@@ -7,18 +7,22 @@ import 'calender.dart';
 
 
 class termsandcondition extends StatelessWidget {
-  const termsandcondition({Key? key}) : super(key: key);
+  final String userId; // Add userId
+  const termsandcondition({required this.userId, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: TermsAndConditionsPage(),
+      home: TermsAndConditionsPage(userId: userId), // Pass userId
     );
   }
 }
 
 class TermsAndConditionsPage extends StatefulWidget {
+  final String userId; // Add userId
+  const TermsAndConditionsPage({required this.userId, Key? key}) : super(key: key);
+
   @override
   _TermsAndConditionsPageState createState() => _TermsAndConditionsPageState();
 }
@@ -39,7 +43,17 @@ class _TermsAndConditionsPageState extends State<TermsAndConditionsPage> {
             await AuthServices().signOut();
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => const BikeDetailsApp(),
+                builder: (context) => BikeDetailsApp(userId: widget.userId, // Pass userId
+                  bikeData: const {
+                  'title': 'Placeholder Bike',
+                  'subtitle': 'Subtitle for placeholder',
+                  'image': 'assets/images/placeholder.png',
+                  'specifications': [
+                    'Spec 1: Placeholder',
+                    'Spec 2: Placeholder',
+                    'Spec 3: Placeholder',
+                  ],
+                },),
               ),
             );
           },

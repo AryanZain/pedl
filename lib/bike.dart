@@ -1,26 +1,97 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:pedl/calender.dart';
 import 'package:pedl/services/auth.dart';
 import 'package:pedl/termsandcondition.dart';
+import 'package:pedl/home.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert'; // For JSON encoding/decoding
 
-import 'home.dart';
+//List<Map<String, dynamic>> bookmarks = []; // Global list for bookmarks
 
 class BikeDetailsApp extends StatelessWidget {
-  const BikeDetailsApp({Key? key}) : super(key: key);
+  //final String userName;
+  //const BikeDetailsApp({required this.userName, Key? key}) : super(key: key);
+  //const BikeDetailsApp({Key? key}) : super(key: key);
+  final Map<String, dynamic> bikeData;
+  final String userId; // Add userId
+
+
+
+  const BikeDetailsApp({
+    required this.bikeData,
+    required this.userId,
+    Key? key,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: 'Roboto'),
-      home: const BikeDetailsPage(),
+      home: BikeDetailsPage(bikeData: bikeData, userId: userId),
     );
   }
 }
 
-class BikeDetailsPage extends StatelessWidget {
-  const BikeDetailsPage({Key? key}) : super(key: key);
+class BikeDetailsPage extends StatefulWidget {
+  //const BikeDetailsPage({Key? key}) : super(key: key);
+  final Map<String, dynamic> bikeData;
+  final String userId; // Add userId
+
+  const BikeDetailsPage({
+    required this.bikeData,
+    required this.userId,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  _BikeDetailsPageState createState() => _BikeDetailsPageState();
+}
+
+class _BikeDetailsPageState extends State<BikeDetailsPage> {
+  late SharedPreferences _prefs;
+  List<Map<String, dynamic>> _bookmarks = [];
+  bool isBookmarked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Check if bike is already bookmarked
+    _loadBookmarks();
+  }
+
+  /// Load bookmarks for the current user
+  Future<void> _loadBookmarks() async {
+    _prefs = await SharedPreferences.getInstance();
+    String? bookmarksString = _prefs.getString('bookmarks_${widget.userId}');
+    if (bookmarksString != null) {
+      setState(() {
+        _bookmarks = List<Map<String, dynamic>>.from(
+          json.decode(bookmarksString),
+        );
+        isBookmarked = _bookmarks.any((bike) => bike['title'] == widget.bikeData['title']);
+      });
+    }
+  }
+
+  // Save bookmarks for the current user
+  Future<void> _saveBookmarks() async {
+    await _prefs.setString('bookmarks_${widget.userId}', json.encode(_bookmarks));
+  }
+
+  // Toggle bookmark
+  void _toggleBookmark() {
+    setState(() {
+      if (isBookmarked) {
+        _bookmarks.removeWhere((bike) => bike['title'] == widget.bikeData['title']);
+      } else {
+        _bookmarks.add(widget.bikeData);
+      }
+      isBookmarked = !isBookmarked;
+      _saveBookmarks();
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +106,7 @@ class BikeDetailsPage extends StatelessWidget {
             await AuthServices().signOut();
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => const HomeScreen(),
+                builder: (context) => HomeScreen(userName: 'userName',userId: widget.userId ),
               ),
             );
           },
@@ -43,8 +114,11 @@ class BikeDetailsPage extends StatelessWidget {
         title: const Text('Bike Details', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-            icon: const Icon(CupertinoIcons.bookmark, color: Colors.black),
-            onPressed: () {},
+            icon: Icon(
+              isBookmarked ? CupertinoIcons.bookmark_solid : CupertinoIcons.bookmark,
+              color: Colors.black,
+            ),
+            onPressed: _toggleBookmark,
           ),
         ],
       ),
@@ -55,24 +129,24 @@ class BikeDetailsPage extends StatelessWidget {
           children: [
             // Bike Image
             Center(
-                child: Image.asset("assets/images/bike.png", fit: BoxFit.cover),
+              child: Image.asset(widget.bikeData['image'], fit: BoxFit.cover),
             ),
 
             const SizedBox(height: 20),
 
             // Title and Price
-            const Text(
-              'E-MONO 26\"\nSE-26L03',
-              style: TextStyle(
+            Text(
+              widget.bikeData['title'],
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
               ),
             ),
             const SizedBox(height: 5),
-            const Text(
-              'From \$49 per week',
-              style: TextStyle(
+            Text(
+              widget.bikeData['subtitle'],
+              style: const TextStyle(
                 fontSize: 16,
                 color: Colors.red,
               ),
@@ -81,7 +155,7 @@ class BikeDetailsPage extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Booking Details
-            Container(
+           /* Container(
               padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -100,7 +174,7 @@ class BikeDetailsPage extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 20),*/
 
             // Icons Section
             Row(
@@ -127,7 +201,7 @@ class BikeDetailsPage extends StatelessWidget {
 
             // Specifications
             const Text(
-              'Specification',
+              'Specifications',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -135,20 +209,14 @@ class BikeDetailsPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            const Text(
-              'FRAME: Super Light Step-Through Aluminium-Alloy Frame\n'
-                  'FRONT FORK: 40mm Suspension\n'
-                  'GEARS: Shimano Tourney 7-Speed Cassette with Shifter\n'
-                  'BRAKES: Front & Rear Disc Brakes 180/160MM\n'
-                  'Handle Bar: 66cm Aluminium-Alloy Bar\n'
-                  'Wheel Quick Release Design\n'
-                  'Thumb Accelerator Control',
-              style: TextStyle(
+            ...widget.bikeData['specifications'].map<Widget>((spec) => Text(
+              spec,
+              style: const TextStyle(
                 fontSize: 14,
                 color: Colors.black,
                 height: 1.5,
               ),
-            ),
+            )),
 
             const SizedBox(height: 30),
 
@@ -166,7 +234,7 @@ class BikeDetailsPage extends StatelessWidget {
                   await AuthServices().signOut();
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(
-                      builder: (context) => const termsandcondition(),
+                      builder: (context) => termsandcondition(userId: widget.userId),
                     ),
                   );
                 },

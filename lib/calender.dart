@@ -52,7 +52,7 @@ class _CalendarPageState extends State<CalendarPage> {
             await AuthServices().signOut();
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => const termsandcondition(),
+                builder: (context) => const termsandcondition(userId: "userId_placeholder"),
               ),
             );
           },

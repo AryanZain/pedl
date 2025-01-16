@@ -1,18 +1,25 @@
+// Updated home.dart file
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pedl/profile.dart';
 import 'package:pedl/services/auth.dart';
 import 'package:pedl/signin.dart';
 import 'package:pedl/bike.dart';
 
+import 'bookmark.dart';
+
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final String userName;
+  final String userId; // Add userId here
+  const HomeScreen({required this.userName, required this.userId, Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _CustomAppBar(),
-      drawer: _SideMenu(),
-      body: _HomeContent(),
-      bottomNavigationBar: _CustomBottomNavigationBar(),
+      drawer: _SideMenu(userName: userName),
+      body: _HomeContent(userId: userId), // Pass userId to _HomeContent
+      bottomNavigationBar: _CustomBottomNavigationBar(userId: userId), // Pass userId
       floatingActionButton: _CenteredFAB(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
@@ -62,6 +69,9 @@ class _CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 }
 
 class _SideMenu extends StatelessWidget {
+  final String userName; //
+
+  const _SideMenu({required this.userName, Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -69,7 +79,7 @@ class _SideMenu extends StatelessWidget {
       child: Column(
         children: [
           UserAccountsDrawerHeader(
-            accountName: Text("Zain Ul Abideen", style: TextStyle(fontSize: 24, color: Colors.black)),
+            accountName: Text("$userName", style: TextStyle(fontSize: 24, color: Colors.black)),
             accountEmail: null,
             currentAccountPicture: CircleAvatar(
               backgroundColor: Colors.grey.shade800,
@@ -87,7 +97,7 @@ class _SideMenu extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => ProfilePage(
-                      userName: "Zain Ul Abideen",
+                      userName: "$userName",
                       aboutMe: "Enter Your Description",
                       interests: ["Games Online", "Music"],
                     ),
@@ -135,18 +145,24 @@ class _SideMenu extends StatelessWidget {
 }
 
 class _HomeContent extends StatelessWidget {
+  final String userId; // Receive userId
+  const _HomeContent({required this.userId, Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      //padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       children: [
+        SizedBox(height: 20),
         _SearchAndCategories(),
         SizedBox(height: 20),
-        _YouMayLikeSection(),
+        _YouMayLikeSection(userId: userId), // Pass userId
         SizedBox(height: 20),
         _CurrentTripSection(),
         SizedBox(height: 20),
         _NearbySection(),
+
+        //_YouMayLikeSection(),
       ],
     );
   }
@@ -158,7 +174,7 @@ class _SearchAndCategories extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // Search Bar
         Row(
@@ -209,8 +225,84 @@ class _SearchAndCategories extends StatelessWidget {
     );
   }
 }
-
+//YOU MAY LIKE SECTION
 class _YouMayLikeSection extends StatelessWidget {
+  final String userId; // Receive userId
+  _YouMayLikeSection({required this.userId, Key? key}) : super(key: key);
+
+  final List<Map<String, dynamic>> bikes = [
+    {
+      'title': 'E-MONO 26″ SE-26L03',
+      'subtitle': 'From \$65 per week',
+      'image': 'assets/images/bike1.png',
+      'specifications': [
+        'FRAME: Lightweight Aluminum',
+        'SUSPENSION: 40mm Fork',
+        'BRAKES: Disc Brakes 160mm',
+      ],
+    },
+    {
+      'title': 'E-MONO 27.5″ 27M002',
+      'subtitle': 'From \$75 per week',
+      'image': 'assets/images/bike2.png',
+      'specifications': [
+        'FRAME: Steel',
+        'WHEELS: 26-inch',
+        'BRAKES: V-Brakes',
+      ],
+    },
+    {
+      'title': 'E-mono’s Folding Bike',
+      'subtitle': 'From \$89 per week',
+      'image': 'assets/images/bike3.png',
+      'specifications': [
+        'FRAME: Steel',
+        'WHEELS: 26-inch',
+        'BRAKES: V-Brakes',
+      ],
+    },
+    {
+      'title': 'NCM Moscow Electric Mountain Bike',
+      'subtitle': 'From \$85 per week',
+      'image': 'assets/images/bike4.png',
+      'specifications': [
+        'FRAME: Steel',
+        'WHEELS: 26-inch',
+        'BRAKES: V-Brakes',
+      ],
+    },
+    {
+      'title': 'E-MONO ELECTRIC URBAN BIKE SE-26L03',
+      'subtitle': 'From \$95 per week',
+      'image': 'assets/images/bike5.png',
+      'specifications': [
+        'FRAME: Steel',
+        'WHEELS: 26-inch',
+        'BRAKES: V-Brakes',
+      ],
+    },
+    {
+      'title': 'E-MONO 20 ELECTRIC CARGO BIKE SE-20B01',
+      'subtitle': 'From \$100 per week',
+      'image': 'assets/images/bike6.png',
+      'specifications': [
+        'FRAME: Steel',
+        'WHEELS: 26-inch',
+        'BRAKES: V-Brakes',
+      ],
+    },
+    {
+      'title': 'SUNMONO 26 ELECTRIC URBAN BIKE SE-26L002',
+      'subtitle': 'From \$85 per week',
+      'image': 'assets/images/bike7.png',
+      'specifications': [
+        'FRAME: Steel',
+        'WHEELS: 26-inch',
+        'BRAKES: V-Brakes',
+      ],
+    },
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -222,12 +314,21 @@ class _YouMayLikeSection extends StatelessWidget {
           height: 200,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: 3,
+            itemCount: bikes.length,
             itemBuilder: (context, index) {
+              final bike = bikes[index];
               return _Card(
-                title: "E-MONO 26” SE-26L03",
-                subtitle: "From \$49 per week",
-                onClick: () => print("E-Bike clicked"),
+                title: bike['title']!,
+                subtitle: bike['subtitle']!,
+                imagePath: bike['image']!,
+                onClick: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => BikeDetailsApp(bikeData: bike, userId: userId), // Pass userId
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -236,7 +337,6 @@ class _YouMayLikeSection extends StatelessWidget {
     );
   }
 }
-
 class _CurrentTripSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -291,10 +391,16 @@ class _SectionHeader extends StatelessWidget {
 class _Card extends StatelessWidget {
   final String title;
   final String subtitle;
+  final String imagePath;
   final VoidCallback onClick;
 
-  _Card({required this.title, required this.subtitle, required this.onClick});
-//HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+  const _Card({
+    required this.title,
+    required this.subtitle,
+    required this.imagePath,
+    required this.onClick,
+  });
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -303,19 +409,12 @@ class _Card extends StatelessWidget {
       child: Card(
         elevation: 3,
         child: InkWell(
-          onTap: () async {
-            await AuthServices().signOut();
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => const BikeDetailsApp(),
-              ),
-            );
-          },
+          onTap: onClick,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Image.asset("assets/images/bike.png", fit: BoxFit.cover),
+                child: Image.asset(imagePath, fit: BoxFit.cover),
               ),
               Padding(
                 padding: EdgeInsets.all(8),
@@ -334,8 +433,10 @@ class _Card extends StatelessWidget {
     );
   }
 }
-
 class _CustomBottomNavigationBar extends StatelessWidget {
+  final String userId; // Receive userId
+  const _CustomBottomNavigationBar({required this.userId, Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return BottomAppBar(
@@ -345,8 +446,15 @@ class _CustomBottomNavigationBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           IconButton(
-            onPressed: () => print("Explore clicked"),
-            icon: Icon(Icons.explore),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BookmarkPage(userId: userId), // Pass userId
+                ),
+              );
+    },
+            icon: Icon(CupertinoIcons.bookmark, color: Colors.black),
           ),
           IconButton(
             onPressed: () => print("Calendar clicked"),

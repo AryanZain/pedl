@@ -45,15 +45,15 @@ class _TermsAndConditionsPageState extends State<TermsAndConditionsPage> {
               MaterialPageRoute(
                 builder: (context) => BikeDetailsApp(userId: widget.userId, // Pass userId
                   bikeData: const {
-                  'title': 'Placeholder Bike',
-                  'subtitle': 'Subtitle for placeholder',
-                  'image': 'assets/images/placeholder.png',
-                  'specifications': [
-                    'Spec 1: Placeholder',
-                    'Spec 2: Placeholder',
-                    'Spec 3: Placeholder',
-                  ],
-                },),
+                    'title': 'Placeholder Bike',
+                    'subtitle': 'Subtitle for placeholder',
+                    'image': 'assets/images/placeholder.png',
+                    'specifications': [
+                      'Spec 1: Placeholder',
+                      'Spec 2: Placeholder',
+                      'Spec 3: Placeholder',
+                    ],
+                  },),
               ),
             );
           },

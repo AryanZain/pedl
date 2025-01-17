@@ -6,6 +6,7 @@ import 'package:pedl/services/auth.dart';
 import 'package:pedl/signin.dart';
 import 'package:pedl/bike.dart';
 
+import 'bike_list_page.dart';
 import 'bookmark.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -20,7 +21,7 @@ class HomeScreen extends StatelessWidget {
       drawer: _SideMenu(userName: userName),
       body: _HomeContent(userId: userId), // Pass userId to _HomeContent
       bottomNavigationBar: _CustomBottomNavigationBar(userId: userId), // Pass userId
-      floatingActionButton: _CenteredFAB(),
+      floatingActionButton: _CenteredFAB(userId: userId),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
@@ -154,92 +155,39 @@ class _HomeContent extends StatelessWidget {
       //padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       children: [
         SizedBox(height: 20),
-        _SearchAndCategories(),
-        SizedBox(height: 20),
+        _SearchAndCategories(userId: userId),
+        SizedBox(height: 40),
         _YouMayLikeSection(userId: userId), // Pass userId
-        SizedBox(height: 20),
+        SizedBox(height: 40),
         _CurrentTripSection(),
-        SizedBox(height: 20),
-        _NearbySection(),
+        //SizedBox(height: 20),
+        //_NearbySection(),
 
         //_YouMayLikeSection(),
       ],
     );
   }
 }
+//*** CHANGES FOR SEARCH BAR ***
+class _SearchAndCategories extends StatefulWidget {
+  final String userId; // Add userId parameter
 
-class _SearchAndCategories extends StatelessWidget {
-  final categories = ["E-Bike", "E-Scooter", "Accessories"];
-
+  const _SearchAndCategories({required this.userId, Key? key}) : super(key: key);
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // Search Bar
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: "Search...",
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(width: 10),
-            ElevatedButton.icon(
-              onPressed: () {
-                print("Filter clicked");
-              },
-              icon: Icon(Icons.filter_alt),
-              label: Text("Filters"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 20),
-        // Category Chips
-        Wrap(
-          spacing: 10,
-          children: categories.map((category) {
-            return ActionChip(
-              label: Text(category),
-              onPressed: () => print("$category clicked"),
-              backgroundColor: category == "Accessories"
-                  ? Colors.green
-                  : Colors.orangeAccent,
-              labelStyle: TextStyle(color: Colors.white),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
+  _SearchAndCategoriesState createState() => _SearchAndCategoriesState();
 }
-//YOU MAY LIKE SECTION
-class _YouMayLikeSection extends StatelessWidget {
-  final String userId; // Receive userId
-  _YouMayLikeSection({required this.userId, Key? key}) : super(key: key);
 
-  final List<Map<String, dynamic>> bikes = [
+class _SearchAndCategoriesState extends State<_SearchAndCategories> {
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode(); // Add FocusNode for the search bar
+  List<Map<String, dynamic>> filteredBikes = [];
+  bool _isSearchActive = false;
+  final List<Map<String, dynamic>> allBikes = [
     {
       'title': 'E-MONO 26″ SE-26L03',
       'subtitle': 'From \$65 per week',
       'image': 'assets/images/bike1.png',
-      'specifications': [
-        'FRAME: Lightweight Aluminum',
-        'SUSPENSION: 40mm Fork',
-        'BRAKES: Disc Brakes 160mm',
-      ],
+      'specifications': ['FRAME: Lightweight Aluminum', 'SUSPENSION: 40mm Fork', 'BRAKES: Disc Brakes 160mm'],
     },
     {
       'title': 'E-MONO 27.5″ 27M002',
@@ -303,12 +251,282 @@ class _YouMayLikeSection extends StatelessWidget {
     },
   ];
 
+
+  @override
+  void initState() {
+    super.initState();
+    filteredBikes = [];
+
+    // Add a listener to track focus changes
+    _searchFocusNode.addListener(() {
+      setState(() {
+        _isSearchActive = _searchFocusNode.hasFocus; // Update the active state
+      });
+    });
+  }
+
+
+
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose(); // Dispose of the FocusNode to avoid memory leaks
+    super.dispose();
+  }
+
+  void _filterBikes(String query) {
+    final lowerCaseQuery = query.toLowerCase();
+    setState(() {
+      if (lowerCaseQuery.isEmpty) {
+        filteredBikes = []; // Reset the list if the query is empty
+      } else {
+        filteredBikes = allBikes.where((bike) {
+          return bike['title'].toLowerCase().contains(lowerCaseQuery);
+        }).toList();
+      }
+    });
+  }
+
+  void _dismissKeyboard() {
+    _searchFocusNode.unfocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _dismissKeyboard, // Detect taps outside the search bar
+      behavior: HitTestBehavior.opaque, // Ensure GestureDetector captures all taps
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Search Bar
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  focusNode: _searchFocusNode, // Attach the FocusNode
+                  decoration: InputDecoration(
+                    hintText: "Search...",
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  onChanged: _filterBikes,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+          _buildBikeResults(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBikeResults() {
+    // Show "Start typing..." only when the search bar is focused and empty
+    if (_isSearchActive && _searchController.text.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 20),
+        child: Text(
+          'Start typing to search for bikes', // Show message when search is active
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
+    // Show "No results found" if no bikes match the search query
+    if (filteredBikes.isEmpty && _searchController.text.isNotEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 20),
+        child: Text(
+          'No results found', // Show message if no bikes are found
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
+    // Show filtered bike results
+    return Column(
+      children: filteredBikes.map((bike) {
+        return ListTile(
+          leading: Image.asset(bike['image'], width: 50, height: 50, fit: BoxFit.cover),
+          title: Text(bike['title']),
+          subtitle: Text(bike['subtitle']),
+          onTap: () {
+            _dismissKeyboard(); // Dismiss the keyboard when navigating
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => BikeDetailsApp(
+                  bikeData: bike,
+                  userId: widget.userId, // Pass userId to details page
+                ),
+              ),
+            );
+          },
+        );
+      }).toList(),
+    );
+  }
+}
+
+//********************************************************************************************************************
+/*class _SearchAndCategories extends StatelessWidget {
+  final categories = ["E-Bike", "E-Scooter", "Accessories"];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Search Bar
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: "Search...",
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: 10),
+            /*ElevatedButton.icon(
+              onPressed: () {
+                print("Filter clicked");
+              },
+              icon: Icon(Icons.filter_alt),
+              label: Text("Filters"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            ),*/
+          ],
+        ),
+        SizedBox(height: 20),
+        // Category Chips
+        Wrap(
+          spacing: 10,
+          children: categories.map((category) {
+            return ActionChip(
+              label: Text(category),
+              onPressed: () => print("$category clicked"),
+              backgroundColor: category == "Accessories"
+                  ? Colors.green
+                  : Colors.orangeAccent,
+              labelStyle: TextStyle(color: Colors.white),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+}*/
+//YOU MAY LIKE SECTION
+class _YouMayLikeSection extends StatelessWidget {
+  final String userId; // Receive userId
+  _YouMayLikeSection({required this.userId, Key? key}) : super(key: key);
+
+  final List<Map<String, dynamic>> bikes = [
+    {
+      'title': 'E-MONO 26″ SE-26L03',
+      'subtitle': 'From \$65 per week',
+      'image': 'assets/images/bike1.png',
+      'specifications': [
+        'FRAME: Lightweight Aluminum',
+        'SUSPENSION: 40mm Fork',
+        'BRAKES: Disc Brakes 160mm',
+      ],
+    },
+    {
+      'title': 'E-MONO 27.5″ 27M002',
+      'subtitle': 'From \$75 per week',
+      'image': 'assets/images/bike2.png',
+      'specifications': [
+        'FRAME: Steel',
+        'WHEELS: 26-inch',
+        'BRAKES: V-Brakes',
+      ],
+    },
+    {
+      'title': 'E-mono’s Folding Bike',
+      'subtitle': 'From \$89 per week',
+      'image': 'assets/images/bike3.png',
+      'specifications': [
+        'FRAME: Steel',
+        'WHEELS: 26-inch',
+        'BRAKES: V-Brakes',
+      ],
+    },
+    {
+      'title': 'SUNMONO 26 ELECTRIC URBAN BIKE SE-26L002',
+      'subtitle': 'From \$85 per week',
+      'image': 'assets/images/bike7.png',
+      'specifications': [
+        'FRAME: Steel',
+        'WHEELS: 26-inch',
+        'BRAKES: V-Brakes',
+      ],
+    },
+    {
+      'title': 'E-MONO 20 CARGO BIKE',
+      'subtitle': 'From \$100 per week',
+      'image': 'assets/images/bike6.png',
+      'specifications': [
+        'FRAME: Steel',
+        'WHEELS: 26-inch',
+        'BRAKES: V-Brakes',
+      ],
+    },
+    {
+      'title': 'E-MONO ELECTRIC URBAN BIKE',
+      'subtitle': 'From \$95 per week',
+      'image': 'assets/images/bike5.png',
+      'specifications': [
+        'FRAME: Steel',
+        'WHEELS: 26-inch',
+        'BRAKES: V-Brakes',
+      ],
+    },
+    {
+      'title': 'NCM Moscow Electric Mountain Bike',
+      'subtitle': 'From \$85 per week',
+      'image': 'assets/images/bike4.png',
+      'specifications': [
+        'FRAME: Steel',
+        'WHEELS: 26-inch',
+        'BRAKES: V-Brakes',
+      ],
+    },
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeader(title: "You May Like"),
+        _SectionHeader(
+          title: "You May Like",
+          onSeeAllPressed: () {
+            // Navigate to the Bike List Page when "See All" is pressed
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => BikeListPage(userId: userId, bikes: bikes), // Pass userId and bikes
+              ),
+            );
+          },
+        ),
         SizedBox(height: 10),
         SizedBox(
           height: 200,
@@ -325,7 +543,7 @@ class _YouMayLikeSection extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => BikeDetailsApp(bikeData: bike, userId: userId), // Pass userId
+                      builder: (context) => BikeDetailsApp(bikeData: bike, userId: userId),
                     ),
                   );
                 },
@@ -355,7 +573,7 @@ class _CurrentTripSection extends StatelessWidget {
   }
 }
 
-class _NearbySection extends StatelessWidget {
+/*class _NearbySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -366,12 +584,13 @@ class _NearbySection extends StatelessWidget {
       ],
     );
   }
-}
+}*/
 
 class _SectionHeader extends StatelessWidget {
   final String title;
+  final VoidCallback onSeeAllPressed; // Add a callback for "See All"
 
-  _SectionHeader({required this.title});
+  _SectionHeader({required this.title, required this.onSeeAllPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -380,7 +599,7 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         TextButton(
-          onPressed: () => print("See All clicked"),
+          onPressed: onSeeAllPressed, // Use the callback here
           child: Text("See All"),
         ),
       ],
@@ -476,12 +695,61 @@ class _CustomBottomNavigationBar extends StatelessWidget {
 }
 
 class _CenteredFAB extends StatelessWidget {
+  final String userId; // Add userId as a parameter
+  const _CenteredFAB({required this.userId, Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
+    // Replace this with your actual bike data
+    final bikes = [
+      {
+        'title': 'E-MONO 26″ SE-26L03',
+        'subtitle': 'From \$65 per week',
+        'image': 'assets/images/bike1.png',
+      },
+      {
+        'title': 'E-MONO 27.5″ 27M002',
+        'subtitle': 'From \$75 per week',
+        'image': 'assets/images/bike2.png',
+      },
+      {
+        'title': 'E-mono’s Folding Bike',
+        'subtitle': 'From \$89 per week',
+        'image': 'assets/images/bike3.png',
+      },
+      {
+        'title': 'NCM Moscow Electric Mountain Bike',
+        'subtitle': 'From \$85 per week',
+        'image': 'assets/images/bike4.png',
+      },
+      {
+        'title': 'E-MONO ELECTRIC URBAN BIKE SE-26L03',
+        'subtitle': 'From \$95 per week',
+        'image': 'assets/images/bike5.png',
+      },
+      {
+        'title': 'E-MONO 20 ELECTRIC CARGO BIKE SE-20B01',
+        'subtitle': 'From \$100 per week',
+        'image': 'assets/images/bike6.png',
+      },
+      {
+        'title': 'SUNMONO 26 ELECTRIC URBAN BIKE SE-26L002',
+        'subtitle': 'From \$85 per week',
+        'image': 'assets/images/bike7.png',
+      },
+    ];
+
     return FloatingActionButton(
-      onPressed: () => print("FAB clicked"),
-      child: Icon(Icons.add),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BikeListPage(bikes: bikes,userId: userId),
+          ),
+        );
+      },
       backgroundColor: Colors.redAccent,
+      child: Icon(Icons.add, color: Colors.white),
     );
   }
 }

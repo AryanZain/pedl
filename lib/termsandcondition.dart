@@ -128,7 +128,7 @@ class _TermsAndConditionsPageState extends State<TermsAndConditionsPage> {
                   await AuthServices().signOut();
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(
-                      builder: (context) => Calendar_Page(bikeData: widget.bikeData,),
+                      builder: (context) => Calendar_Page(userId: widget.userId,userName: widget.userName,bikeData: widget.bikeData,),
                     ),
                   );
                 }

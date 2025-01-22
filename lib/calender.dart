@@ -8,35 +8,41 @@ import 'bike.dart';
 import 'checkout.dart';
 import 'home.dart';
 class Calendar_Page extends StatelessWidget {
+  final String userId;
+  final String userName;
   final Map<String, dynamic> bikeData;
-  const Calendar_Page({required this.bikeData,  Key? key}) : super(key: key);
+  const Calendar_Page({required this.userId,required this.userName,required this.bikeData,  Key? key}) : super(key: key);
 
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: CalendarApp(bikeData: bikeData,),
+      home: CalendarApp(userId: userId, userName: userName,bikeData: bikeData,),
     );
   }
 }
 
 class CalendarApp extends StatelessWidget {
+  final String userId;
+  final String userName;
   final Map<String, dynamic> bikeData;
-  const CalendarApp({required this.bikeData,  Key? key}) : super(key: key);
+  const CalendarApp({required this.userId,required this.userName,required this.bikeData,  Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: CalendarPage(bikeData: bikeData,),
+      home: CalendarPage(userId: userId, userName: userName,bikeData: bikeData,),
     );
   }
 }
 
 class CalendarPage extends StatefulWidget {
+  final String userId;
+  final String userName;
   final Map<String, dynamic> bikeData;
-  const CalendarPage({required this.bikeData,  Key? key}) : super(key: key);
+  const CalendarPage({required this.userId,required this.userName,required this.bikeData,  Key? key}) : super(key: key);
 
   @override
   State<CalendarPage> createState() => _CalendarPageState();
@@ -59,7 +65,7 @@ class _CalendarPageState extends State<CalendarPage> {
             await AuthServices().signOut();
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => termsandcondition(userId: "userId_placeholder", userName: "placeholder",bikeData: widget.bikeData,),
+                builder: (context) => termsandcondition(userId: widget.userId, userName: widget.userName,bikeData: widget.bikeData,),
               ),
             );
           },
@@ -176,7 +182,7 @@ class _CalendarPageState extends State<CalendarPage> {
                           await AuthServices().signOut();
                           Navigator.of(context).pushReplacement(
                             MaterialPageRoute(
-                              builder: (context) => checkout(bikeData: widget.bikeData,),
+                              builder: (context) => checkout(userId: widget.userId,userName: widget.userName,bikeData: widget.bikeData,),
                             ),
                           );
                         },

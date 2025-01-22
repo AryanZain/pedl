@@ -46,6 +46,7 @@ dependencies:
   shared_preferences: ^2.3.5
   flutter_email_sender: ^6.0.3
   flutter_local_notifications: ^18.0.1
+  mailer: ^6.4.1
 
 dev_dependencies:
   flutter_test:

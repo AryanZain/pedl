@@ -14,6 +14,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+        coreLibraryDesugaringEnabled true
     }
 
     kotlinOptions {
@@ -25,11 +26,14 @@ android {
         applicationId = "com.example.pedl"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        //minSdk = flutter.minSdkVersion
+        minSdkVersion 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        minSdkVersion 23
+
+
+        multiDexEnabled true
     }
 
     buildTypes {
@@ -43,4 +47,10 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    implementation 'androidx.multidex:multidex:2.0.1'
+    //implementation 'com.android.tools:desugar_jdk_libs:2.0.3' // Optional for other dependencies
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3' // Correct placement for desugaring
 }

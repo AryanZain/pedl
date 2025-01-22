@@ -13,13 +13,15 @@ class BikeDetailsApp extends StatelessWidget {
   //const BikeDetailsApp({required this.userName, Key? key}) : super(key: key);
   //const BikeDetailsApp({Key? key}) : super(key: key);
   final Map<String, dynamic> bikeData;
-  final String userId; // Add userId
+  final String userId;
+  final String userName;
 
 
 
   const BikeDetailsApp({
     required this.bikeData,
     required this.userId,
+    required this.userName,
     Key? key,
   }) : super(key: key);
 
@@ -28,7 +30,7 @@ class BikeDetailsApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: 'Roboto'),
-      home: BikeDetailsPage(bikeData: bikeData, userId: userId),
+      home: BikeDetailsPage(bikeData: bikeData, userId: userId,userName: userName, ),
     );
   }
 }
@@ -36,11 +38,13 @@ class BikeDetailsApp extends StatelessWidget {
 class BikeDetailsPage extends StatefulWidget {
   //const BikeDetailsPage({Key? key}) : super(key: key);
   final Map<String, dynamic> bikeData;
-  final String userId; // Add userId
+  final String userId;
+  final String userName;
 
   const BikeDetailsPage({
     required this.bikeData,
     required this.userId,
+    required this.userName,
     Key? key,
   }) : super(key: key);
 
@@ -106,7 +110,7 @@ class _BikeDetailsPageState extends State<BikeDetailsPage> {
             await AuthServices().signOut();
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => HomeScreen(userName: 'userName',userId: widget.userId ),
+                builder: (context) => HomeScreen(userName:  widget.userName,userId: widget.userId,userEmail: "abcd@gmail.com", ),
               ),
             );
           },
@@ -155,7 +159,7 @@ class _BikeDetailsPageState extends State<BikeDetailsPage> {
             const SizedBox(height: 20),
 
             // Booking Details
-           /* Container(
+            /* Container(
               padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -234,7 +238,7 @@ class _BikeDetailsPageState extends State<BikeDetailsPage> {
                   await AuthServices().signOut();
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(
-                      builder: (context) => termsandcondition(userId: widget.userId),
+                      builder: (context) => termsandcondition(userId: widget.userId, userName: widget.userName, bikeData: widget.bikeData,),
                     ),
                   );
                 },

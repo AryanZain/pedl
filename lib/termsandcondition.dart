@@ -7,21 +7,25 @@ import 'calender.dart';
 
 
 class termsandcondition extends StatelessWidget {
-  final String userId; // Add userId
-  const termsandcondition({required this.userId, Key? key}) : super(key: key);
+  final String userId;
+  final String userName;
+  final Map<String, dynamic> bikeData;
+  const termsandcondition({required this.userId,required this.userName,required this.bikeData,  Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: TermsAndConditionsPage(userId: userId), // Pass userId
+      home: TermsAndConditionsPage(userId: userId, userName: userName,bikeData: bikeData,), // Pass userId
     );
   }
 }
 
 class TermsAndConditionsPage extends StatefulWidget {
-  final String userId; // Add userId
-  const TermsAndConditionsPage({required this.userId, Key? key}) : super(key: key);
+  final String userId;
+  final String userName;
+  final Map<String, dynamic> bikeData;
+  const TermsAndConditionsPage({required this.userId, required this.userName,required this.bikeData, Key? key}) : super(key: key);
 
   @override
   _TermsAndConditionsPageState createState() => _TermsAndConditionsPageState();
@@ -43,17 +47,9 @@ class _TermsAndConditionsPageState extends State<TermsAndConditionsPage> {
             await AuthServices().signOut();
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => BikeDetailsApp(userId: widget.userId, // Pass userId
-                  bikeData: const {
-                    'title': 'Placeholder Bike',
-                    'subtitle': 'Subtitle for placeholder',
-                    'image': 'assets/images/placeholder.png',
-                    'specifications': [
-                      'Spec 1: Placeholder',
-                      'Spec 2: Placeholder',
-                      'Spec 3: Placeholder',
-                    ],
-                  },),
+                builder: (context) => BikeDetailsApp(userId: widget.userId, userName: widget.userName,
+                  bikeData: widget.bikeData,
+                ),
               ),
             );
           },
@@ -132,7 +128,7 @@ class _TermsAndConditionsPageState extends State<TermsAndConditionsPage> {
                   await AuthServices().signOut();
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(
-                      builder: (context) => const Calendar_Page(),
+                      builder: (context) => Calendar_Page(bikeData: widget.bikeData,),
                     ),
                   );
                 }

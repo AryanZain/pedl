@@ -7,19 +7,21 @@ import 'package:pedl/signin.dart';
 import 'package:pedl/bike.dart';
 
 import 'bike_list_page.dart';
+import 'book_service_page.dart';
 import 'bookmark.dart';
 
 class HomeScreen extends StatelessWidget {
   final String userName;
-  final String userId; // Add userId here
-  const HomeScreen({required this.userName, required this.userId, Key? key}) : super(key: key);
+  final String userId;
+  final String userEmail;
+  const HomeScreen({required this.userName, required this.userId, required this.userEmail, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _CustomAppBar(),
       drawer: _SideMenu(userName: userName),
-      body: _HomeContent(userId: userId), // Pass userId to _HomeContent
+      body: _HomeContent(userName: userName, userId: userId, userEmail: userEmail), // Pass userId to _HomeContent
       bottomNavigationBar: _CustomBottomNavigationBar(userId: userId), // Pass userId
       floatingActionButton: _CenteredFAB(userId: userId),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -146,8 +148,10 @@ class _SideMenu extends StatelessWidget {
 }
 
 class _HomeContent extends StatelessWidget {
-  final String userId; // Receive userId
-  const _HomeContent({required this.userId, Key? key}) : super(key: key);
+  final String userName;
+  final String userId;
+  final String userEmail;
+  const _HomeContent({required this.userName, required this.userId, required this.userEmail, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -155,11 +159,11 @@ class _HomeContent extends StatelessWidget {
       //padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       children: [
         SizedBox(height: 20),
-        _SearchAndCategories(userId: userId),
+        _SearchAndCategories(userName: userName,userId: userId),
         SizedBox(height: 40),
-        _YouMayLikeSection(userId: userId), // Pass userId
+        _YouMayLikeSection(userId: userId, userName: userName), // Pass userId
         SizedBox(height: 40),
-        _CurrentTripSection(),
+        _CurrentTripSection(userEmail: userEmail),
         //SizedBox(height: 20),
         //_NearbySection(),
 
@@ -170,9 +174,10 @@ class _HomeContent extends StatelessWidget {
 }
 //*** CHANGES FOR SEARCH BAR ***
 class _SearchAndCategories extends StatefulWidget {
-  final String userId; // Add userId parameter
+  final String userName;
+  final String userId;
 
-  const _SearchAndCategories({required this.userId, Key? key}) : super(key: key);
+  const _SearchAndCategories({ required this.userName,required this.userId, Key? key}) : super(key: key);
   @override
   _SearchAndCategoriesState createState() => _SearchAndCategoriesState();
 }
@@ -304,17 +309,20 @@ class _SearchAndCategoriesState extends State<_SearchAndCategories> {
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  focusNode: _searchFocusNode, // Attach the FocusNode
-                  decoration: InputDecoration(
-                    hintText: "Search...",
-                    prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode, // Attach the FocusNode
+                    decoration: InputDecoration(
+                      hintText: "Search...",
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
                     ),
+                    onChanged: _filterBikes,
                   ),
-                  onChanged: _filterBikes,
                 ),
               ),
             ],
@@ -363,6 +371,7 @@ class _SearchAndCategoriesState extends State<_SearchAndCategories> {
               MaterialPageRoute(
                 builder: (context) => BikeDetailsApp(
                   bikeData: bike,
+                  userName: widget.userName,
                   userId: widget.userId, // Pass userId to details page
                 ),
               ),
@@ -374,68 +383,12 @@ class _SearchAndCategoriesState extends State<_SearchAndCategories> {
   }
 }
 
-//********************************************************************************************************************
-/*class _SearchAndCategories extends StatelessWidget {
-  final categories = ["E-Bike", "E-Scooter", "Accessories"];
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // Search Bar
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: "Search...",
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(width: 10),
-            /*ElevatedButton.icon(
-              onPressed: () {
-                print("Filter clicked");
-              },
-              icon: Icon(Icons.filter_alt),
-              label: Text("Filters"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-            ),*/
-          ],
-        ),
-        SizedBox(height: 20),
-        // Category Chips
-        Wrap(
-          spacing: 10,
-          children: categories.map((category) {
-            return ActionChip(
-              label: Text(category),
-              onPressed: () => print("$category clicked"),
-              backgroundColor: category == "Accessories"
-                  ? Colors.green
-                  : Colors.orangeAccent,
-              labelStyle: TextStyle(color: Colors.white),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-}*/
 //YOU MAY LIKE SECTION
 class _YouMayLikeSection extends StatelessWidget {
-  final String userId; // Receive userId
-  _YouMayLikeSection({required this.userId, Key? key}) : super(key: key);
+  final String userId;
+  final String userName;
+  _YouMayLikeSection({required this.userId, required this.userName, Key? key}) : super(key: key);
 
   final List<Map<String, dynamic>> bikes = [
     {
@@ -543,7 +496,7 @@ class _YouMayLikeSection extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => BikeDetailsApp(bikeData: bike, userId: userId),
+                      builder: (context) => BikeDetailsApp(bikeData: bike, userId: userId, userName: userName,),
                     ),
                   );
                 },
@@ -556,17 +509,26 @@ class _YouMayLikeSection extends StatelessWidget {
   }
 }
 class _CurrentTripSection extends StatelessWidget {
+  final String userEmail;
+  const _CurrentTripSection({required this.userEmail, Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Colors.lightBlue.shade100,
-      child: ListTile(
-        leading: Icon(Icons.directions_bike, size: 40, color: Colors.blue),
-        title: Text("Service Due"),
-        subtitle: Text("E-MONO SE-26L03"),
-        trailing: ElevatedButton(
-          onPressed: () => print("Book clicked"),
-          child: Text("BOOK"),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 5.0),
+      child: Card(
+        color: Colors.lightBlue.shade100,
+        child: ListTile(
+          leading: Icon(Icons.directions_bike, size: 40, color: Colors.blue),
+          title: Text("Service Due?"),
+          subtitle: Text("Book One Now"),
+          trailing: ElevatedButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => BookServicePage(userEmail: userEmail)),
+            ),
+            child: Text("BOOK"),
+          ),
         ),
       ),
     );
@@ -594,15 +556,18 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        TextButton(
-          onPressed: onSeeAllPressed, // Use the callback here
-          child: Text("See All"),
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          TextButton(
+            onPressed: onSeeAllPressed, // Use the callback here
+            child: Text("See All"),
+          ),
+        ],
+      ),
     );
   }
 }

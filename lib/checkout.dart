@@ -6,19 +6,21 @@ import 'home.dart';
 
 
 class checkout extends StatelessWidget {
-  const checkout({Key? key}) : super(key: key);
+  final Map<String, dynamic> bikeData;
+  const checkout({required this.bikeData,  Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: CheckoutPage(),
+      home: CheckoutPage(bikeData: bikeData,),
     );
   }
 }
 
 class CheckoutPage extends StatelessWidget {
-  const CheckoutPage({Key? key}) : super(key: key);
+  final Map<String, dynamic> bikeData;
+  const CheckoutPage({required this.bikeData,  Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +35,7 @@ class CheckoutPage extends StatelessWidget {
             await AuthServices().signOut();
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => const termsandcondition(userId: "userId_placeholder"),
+                builder: (context) => termsandcondition(userId: "userId_placeholder", userName: "Placeholder", bikeData: bikeData,),
               ),
             );
           },

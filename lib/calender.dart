@@ -8,28 +8,35 @@ import 'bike.dart';
 import 'checkout.dart';
 import 'home.dart';
 class Calendar_Page extends StatelessWidget {
-  const Calendar_Page({super.key});
+  final Map<String, dynamic> bikeData;
+  const Calendar_Page({required this.bikeData,  Key? key}) : super(key: key);
 
-  @override
-  Widget build(BuildContext context) {
-    return  CalendarApp();
-  }
-}
-
-class CalendarApp extends StatelessWidget {
-  const CalendarApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const CalendarPage(),
+      home: CalendarApp(bikeData: bikeData,),
+    );
+  }
+}
+
+class CalendarApp extends StatelessWidget {
+  final Map<String, dynamic> bikeData;
+  const CalendarApp({required this.bikeData,  Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: CalendarPage(bikeData: bikeData,),
     );
   }
 }
 
 class CalendarPage extends StatefulWidget {
-  const CalendarPage({Key? key}) : super(key: key);
+  final Map<String, dynamic> bikeData;
+  const CalendarPage({required this.bikeData,  Key? key}) : super(key: key);
 
   @override
   State<CalendarPage> createState() => _CalendarPageState();
@@ -52,7 +59,7 @@ class _CalendarPageState extends State<CalendarPage> {
             await AuthServices().signOut();
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => const termsandcondition(userId: "userId_placeholder"),
+                builder: (context) => termsandcondition(userId: "userId_placeholder", userName: "placeholder",bikeData: widget.bikeData,),
               ),
             );
           },
@@ -169,7 +176,7 @@ class _CalendarPageState extends State<CalendarPage> {
                           await AuthServices().signOut();
                           Navigator.of(context).pushReplacement(
                             MaterialPageRoute(
-                              builder: (context) => const checkout(),
+                              builder: (context) => checkout(bikeData: widget.bikeData,),
                             ),
                           );
                         },

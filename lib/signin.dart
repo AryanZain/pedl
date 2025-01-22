@@ -10,6 +10,7 @@ import 'package:pedl/widget/textfeild.dart';
 import 'package:pedl/widget/button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SigninScreen extends StatefulWidget {
   const SigninScreen({super.key});
@@ -25,13 +26,51 @@ class _SignupScreenState extends State<SigninScreen> {
   final _auth = FirebaseAuth.instance;
 
   bool isLoading = false;
-  //CHANGE ONE
+  bool rememberMe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberMeData();
+  }
+
   @override
   void dispose() {
     super.dispose();
     emailController.dispose();
     passwordController.dispose();
   }
+
+  // Load email and password from SharedPreferences
+  Future<void> _loadRememberMeData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      rememberMe = prefs.getBool('rememberMe') ?? false;
+      if (rememberMe) {
+        emailController.text = prefs.getString('email') ?? '';
+        passwordController.text = prefs.getString('password') ?? '';
+      }
+    });
+  }
+
+  // Save email and password to SharedPreferences
+  Future<void> _saveRememberMeData() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (rememberMe) {
+      await prefs.setBool('rememberMe', true);
+      await prefs.setString('email', emailController.text);
+      await prefs.setString('password', passwordController.text);
+    } else {
+      await prefs.remove('rememberMe');
+      await prefs.remove('email');
+      await prefs.remove('password');
+    }
+  }
+
+
+
+
+
   //Sign In Function
   void signinUsers() async{
     String res = await AuthServices().signinUser(
@@ -44,9 +83,11 @@ class _SignupScreenState extends State<SigninScreen> {
       });
       //navigate to the next screen
       try {
+        await _saveRememberMeData();
         // Fetch the user's name from Firestore
         User? user = _auth.currentUser;
         if (user != null) {
+          String userEmail = user.email!;
           DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
           String userName = userDoc['name'];
           String userId = user.uid; // Fetch the userId (UID)
@@ -54,7 +95,7 @@ class _SignupScreenState extends State<SigninScreen> {
           // Navigate to the HomeScreen with the user's name
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (context) => HomeScreen(userName: userName, userId: userId),
+              builder: (context) => HomeScreen(userName: userName, userId: userId,userEmail: userEmail,),
             ),
           );
         }
@@ -138,8 +179,12 @@ class _SignupScreenState extends State<SigninScreen> {
                     Row(
                       children: [
                         Switch(
-                          value: true,
-                          onChanged: (bool value) {},
+                          value: rememberMe,
+                          onChanged: (bool value) {
+                            setState(() {
+                              rememberMe = value;
+                            });
+                          },
                           activeColor: Color(0xffdf453e),
                         ),
                         const SizedBox(

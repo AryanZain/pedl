@@ -9,6 +9,7 @@ import 'package:pedl/bike.dart';
 import 'bike_list_page.dart';
 import 'book_service_page.dart';
 import 'bookmark.dart';
+import 'contact_us_page.dart';
 
 class HomeScreen extends StatelessWidget {
   final String userName;
@@ -127,7 +128,12 @@ class _SideMenu extends StatelessWidget {
           ListTile(
             leading: Icon(Icons.contact_support),
             title: Text("Contact Us"),
-            onTap: () => print("Contact Us clicked"),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ContactUsPage()),
+              );
+            },
           ),
           ListTile(
             leading: Icon(Icons.logout),

@@ -23,7 +23,7 @@ class HomeScreen extends StatelessWidget {
       appBar: _CustomAppBar(),
       drawer: _SideMenu(userName: userName),
       body: _HomeContent(userName: userName, userId: userId, userEmail: userEmail), // Pass userId to _HomeContent
-      bottomNavigationBar: _CustomBottomNavigationBar(userId: userId), // Pass userId
+      bottomNavigationBar: _CustomBottomNavigationBar(userId: userId,userName: userName), // Pass userId
       floatingActionButton: _CenteredFAB(userId: userId),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
@@ -625,7 +625,10 @@ class _Card extends StatelessWidget {
 }
 class _CustomBottomNavigationBar extends StatelessWidget {
   final String userId; // Receive userId
-  const _CustomBottomNavigationBar({required this.userId, Key? key}) : super(key: key);
+  final String userName; //
+
+
+  const _CustomBottomNavigationBar({required this.userId,required this.userName, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -652,11 +655,22 @@ class _CustomBottomNavigationBar extends StatelessWidget {
           ),
           SizedBox(width: 40), // Space for FAB
           IconButton(
-            onPressed: () => print("Rent clicked"),
+            onPressed: () => print("Bike clicked"),
             icon: Icon(Icons.directions_bike),
           ),
           IconButton(
-            onPressed: () => print("Profile clicked"),
+            onPressed: () async{
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProfilePage(
+                    userName: "$userName",
+                    aboutMe: "Enter Your Description",
+                    interests: ["Games Online", "Music"],
+                  ),
+                ),
+              );
+            },
             icon: Icon(Icons.person),
           ),
         ],

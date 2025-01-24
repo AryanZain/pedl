@@ -47,6 +47,8 @@ dependencies:
   flutter_email_sender: ^6.0.3
   flutter_local_notifications: ^18.0.1
   mailer: ^6.4.1
+  geolocator: ^13.0.2
+  geocoding: ^3.0.0
 
 dev_dependencies:
   flutter_test:
@@ -81,6 +83,7 @@ flutter:
     - assets/images/bike5.png
     - assets/images/bike6.png
     - assets/images/bike7.png
+    - assets/images/cover_image.webp
 
 
       # An image asset can refer to one or more resolution-specific "variants", see

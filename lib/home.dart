@@ -10,6 +10,8 @@ import 'bike_list_page.dart';
 import 'book_service_page.dart';
 import 'bookmark.dart';
 import 'contact_us_page.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 class HomeScreen extends StatelessWidget {
   final String userName;
@@ -30,7 +32,7 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class _CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
+/*class _CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
@@ -70,6 +72,106 @@ class _CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => Size.fromHeight(100);
+}*/
+//=====================================================================
+class _CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
+  @override
+  _CustomAppBarState createState() => _CustomAppBarState();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(100);
+}
+
+class _CustomAppBarState extends State<_CustomAppBar> {
+  String _location = "Fetching location...";
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLocation();
+  }
+
+  Future<void> _fetchLocation() async {
+    try {
+      LocationPermission permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        setState(() {
+          _location = "Location permissions denied";
+        });
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+
+      // Debug: Print fetched latitude and longitude
+      print("Latitude: ${position.latitude}, Longitude: ${position.longitude}");
+
+
+      // Reverse geocode to get the address
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+          position.latitude, position.longitude);
+
+      // Use the first placemark to extract the location details
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+        setState(() {
+          _location = "${place.locality}, ${place.administrativeArea}, ${place.country}";
+        });
+      } else {
+        setState(() {
+          _location = "No location details available";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _location = "Error: $e"; // Display the error for debugging
+        print("Error: $e");
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      toolbarHeight: 100,
+      backgroundColor: Colors.redAccent,
+      elevation: 0,
+      title: Padding(
+        padding: const EdgeInsets.only(top: 20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Current Location",
+                style: TextStyle(fontSize: 14, color: Colors.white)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    _location,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    overflow: TextOverflow.ellipsis, // Prevent overflow
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.notifications, color: Colors.white),
+                  onPressed: () {
+                    print("Notifications clicked");
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _SideMenu extends StatelessWidget {
@@ -166,7 +268,21 @@ class _HomeContent extends StatelessWidget {
       children: [
         SizedBox(height: 20),
         _SearchAndCategories(userName: userName,userId: userId),
-        SizedBox(height: 40),
+        SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 0),
+          child: AspectRatio(
+            aspectRatio: 16 / 9, // Responsive aspect ratio for the image
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(0), // Rounded corners
+              child: Image.asset(
+                'assets/images/cover_image.webp', // Replace with your image path
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(height: 20),
         _YouMayLikeSection(userId: userId, userName: userName), // Pass userId
         SizedBox(height: 40),
         _CurrentTripSection(userEmail: userEmail),

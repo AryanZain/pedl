@@ -201,16 +201,16 @@ class _CalendarPageState extends State<CalendarPage> {
               ),
             ),
           ),
-          const Text(
+          /*const Text(
             'No Upcoming Rentals',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 5),
-          const Text(
+          ),*/
+          //const SizedBox(height: 5),
+          /*const Text(
             'Lorem ipsum dolor sit amet, consectetur',
             style: TextStyle(fontSize: 14, color: Colors.grey),
-          ),
-          const SizedBox(height: 20),
+          ),*/
+          const SizedBox(height: 40),
         ],
 
       ),

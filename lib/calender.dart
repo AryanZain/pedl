@@ -1,12 +1,12 @@
 import 'package:pedl/services/auth.dart';
 import 'package:pedl/termsandcondition.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
-
-import 'bike.dart';
 import 'checkout.dart';
-import 'home.dart';
+import 'package:intl/intl.dart';
+
+
+
 class Calendar_Page extends StatelessWidget {
   final String userId;
   final String userName;
@@ -49,8 +49,56 @@ class CalendarPage extends StatefulWidget {
 }
 
 class _CalendarPageState extends State<CalendarPage> {
-  DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay;
+  DateTime _focusedDay = DateTime.now().add(const Duration(days: 7));
+  DateTime? _selectedPickupDay;
+  DateTime? _selectedDropOffDay;
+  TimeOfDay? _pickupTime;
+  TimeOfDay? _dropOffTime;
+
+  // Extract bike name with a fallback value
+  String get bikeName => widget.bikeData['title']?.toString() ?? 'Unknown Bike';
+
+  // Show a popup with the name of the selected bike
+  /*void  _showBikePopup(String bikeName) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Selected Bike"),
+          content: Text("You have selected the bike: $bikeName"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }*/
+
+  // Show error popup for validation failures
+  void _showErrorPopup(String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Error"),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,28 +124,55 @@ class _CalendarPageState extends State<CalendarPage> {
       body: Column(
         children: [
           TableCalendar(
-            firstDay: DateTime.utc(2000, 1, 1),
+            firstDay: DateTime.now().add(const Duration(days: 1)),
             lastDay: DateTime.utc(2100, 12, 31),
             focusedDay: _focusedDay,
             selectedDayPredicate: (day) {
-              return isSameDay(_selectedDay, day);
+              return isSameDay(_selectedPickupDay, day) ||
+                  isSameDay(_selectedDropOffDay, day);
             },
             onDaySelected: (selectedDay, focusedDay) {
               setState(() {
-                _selectedDay = selectedDay;
+                if (_selectedPickupDay == selectedDay) {
+                  // Deselect the pickup day
+                  _selectedPickupDay = null;
+                } else if (_selectedDropOffDay == selectedDay) {
+                  // Deselect the drop-off day
+                  _selectedDropOffDay = null;
+                } else if (_selectedPickupDay == null) {
+                  if (selectedDay.isAfter(DateTime.now().add(const Duration(days: 1)))) {
+                    _selectedPickupDay = selectedDay;
+                  } else {
+                    _showErrorPopup("Pickup date must be at least 24 hours from the booking date.");
+                  }
+                } else if (_selectedDropOffDay == null) {
+                  if (selectedDay.isAfter(_selectedPickupDay!)) {
+                    final duration = selectedDay.difference(_selectedPickupDay!).inDays;
+                    if (duration >= 7) {
+                      _selectedDropOffDay = selectedDay;
+                    } else {
+                      _showErrorPopup("Drop-off date must be at least 7 days after the pickup date.");
+                    }
+                  } else {
+                    _showErrorPopup("Drop-off date must be after the pickup date.");
+                  }
+                } else {
+                  _selectedPickupDay = selectedDay;
+                  _selectedDropOffDay = null;
+                }
                 _focusedDay = focusedDay;
               });
             },
-            calendarStyle: const CalendarStyle(
-              todayDecoration: BoxDecoration(
+            calendarStyle: CalendarStyle(
+              todayDecoration: const BoxDecoration(
                 color: Colors.red,
                 shape: BoxShape.circle,
               ),
-              selectedDecoration: BoxDecoration(
+              selectedDecoration: const BoxDecoration(
                 color: Colors.black,
                 shape: BoxShape.circle,
               ),
-              weekendTextStyle: TextStyle(color: Colors.red),
+              weekendTextStyle: const TextStyle(color: Colors.red),
             ),
             headerStyle: const HeaderStyle(
               formatButtonVisible: false,
@@ -105,6 +180,50 @@ class _CalendarPageState extends State<CalendarPage> {
             ),
           ),
           const SizedBox(height: 20),
+
+          // ADD THIS SECTION FOR DISPLAYING SELECTED DATES
+          if (_selectedPickupDay != null || _selectedDropOffDay != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_selectedPickupDay != null)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Selected Pickup Date:',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          DateFormat('d MMM yyyy').format(_selectedPickupDay!),
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  if (_selectedDropOffDay != null)
+                    const SizedBox(height: 10), // Spacing between the two rows
+                  if (_selectedDropOffDay != null)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Selected Drop-Off Date:',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          DateFormat('d MMM yyyy').format(_selectedDropOffDay!),
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 30),
+                ],
+              ),
+
+            ),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -122,10 +241,14 @@ class _CalendarPageState extends State<CalendarPage> {
                         initialTime: TimeOfDay.now(),
                       );
                       if (picked != null) {
-                        // Handle pick-up time
+                        setState(() {
+                          _pickupTime = picked;
+                        });
                       }
                     },
-                    child: const Text('10:00 AM'),
+                    child: Text(_pickupTime != null
+                        ? _pickupTime!.format(context)
+                        : 'Select Time'),
                   ),
                 ],
               ),
@@ -143,10 +266,14 @@ class _CalendarPageState extends State<CalendarPage> {
                         initialTime: TimeOfDay.now(),
                       );
                       if (picked != null) {
-                        // Handle drop-off time
+                        setState(() {
+                          _dropOffTime = picked;
+                        });
                       }
                     },
-                    child: const Text('4:00 PM'),
+                    child: Text(_dropOffTime != null
+                        ? _dropOffTime!.format(context)
+                        : 'Select Time'),
                   ),
                 ],
               ),
@@ -164,36 +291,41 @@ class _CalendarPageState extends State<CalendarPage> {
                 ),
               ),
               onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    backgroundColor: Colors.grey[900],
-                    title: const Text(
-                      'Booking Confirmed',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    content: const Text(
-                      'Thank you for booking E-MONO 26! Your pickup is scheduled for 2 Oct 2024 at 10AM.',
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () async {
-                          await AuthServices().signOut();
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                              builder: (context) => checkout(userId: widget.userId,userName: widget.userName,bikeData: widget.bikeData,),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'OK',
-                          style: TextStyle(color: Colors.red),
-                        ),
+                if (_selectedPickupDay != null && _pickupTime != null) {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      backgroundColor: Colors.grey[900],
+                      title: const Text(
+                        'Confirm Booking',
+                        style: TextStyle(color: Colors.white),
                       ),
-                    ],
-                  ),
-                );
+                      content: Text(
+                        'Thank you for booking $bikeName! Your pickup is scheduled for ${DateFormat('d MMM yyyy').format(_selectedPickupDay!)} at ${_pickupTime!.format(context)}.',
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () async {
+                            await AuthServices().signOut();
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                builder: (context) => checkout(
+                                    userId: widget.userId,
+                                    userName: widget.userName,
+                                    bikeData: widget.bikeData),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            'OK',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
               },
               child: const Text(
                 'BOOK NOW',

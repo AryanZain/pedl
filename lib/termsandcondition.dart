@@ -1,4 +1,4 @@
-import 'package:pedl/checkout.dart';
+
 import 'package:flutter/material.dart';
 import 'package:pedl/services/auth.dart';
 
@@ -78,24 +78,66 @@ class _TermsAndConditionsPageState extends State<TermsAndConditionsPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Text(
-                      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '
-                          'Cras ac justo ac orci sagittis tincidunt euismod eu sem. '
-                          'Morbi hendrerit suscipit commodo. In iaculis justo nibh. Nulla facilisi. '
-                          'Etiam fermentum porttitor tortor. Etiam ut commodo magna, ac varius enim. '
-                          'In hac habitasse platea dictumst. Fusce turpis nisi. Nunc mollis, lorem nec '
-                          'ultricida mi, sed commodo massa facilisis at. Etiam sollicitudin enim mi, nec '
-                          'tristique tellus ultrices ut. Cras vel massa faucibus, pharetra odio ac, '
-                          'lobortis nisl. Aenean cursus eget metus vel dignissim. Nulla id ultrices est. '
-                          'Suspendisse lobortis ultrices lectus, a lacinia orci. Aliquam temp.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey.shade800,
-                        height: 1.6,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Text(
+                        '''
+These Terms are entered into between PedL Pty Ltd ABN 66 638 872 205 and ACN 638 872 205 5 (“PedL”, “we”, “us”, “our”) and the party named in the application for renting the PedL bike.
 
+1) Security Deposit
+A security deposit of \$250 is payable after agreeing to rental terms with PedL. It covers equipment (helmet, lights, phone holder, lock, and bike parts). Costs for damages or replacements will be deducted. Deposits are non-refundable for rent-to-buy plans.
+
+2) Fees and Payment Terms
+Fees are paid in 2-week increments upfront via direct debit. Rent-to-buy requires 4 weeks paid upfront at \$130 per week. All rental fees are non-refundable.
+
+3) Late and Missed Payments
+Missed payments incur a \$10 weekly fee. After 2 missed payments, the bike must be returned.
+
+4) Rental Period
+Rentals are agreed upon for a specific period. Late returns after 10 AM incur an additional week’s fee.
+
+5) Termination of Agreement
+The agreement may be terminated after 2 missed payments or due to misuse/damage. The bike must be returned immediately.
+
+6) Maintenance
+General maintenance is free (brakes, chains, etc.), but breakdowns like punctures are your responsibility.
+
+7) Theft or Damage
+In case of theft or loss, report with a police report. A \$1,500 fee applies, excluding the bond.
+
+8) Key Ways to Avoid Theft
+Always lock the bike securely and store it safely inside your house.
+
+9) Insurance
+Optional insurance is recommended for rentals over 4 weeks at \$10 per week. Theft or irreparable damage incurs a \$500 excess fee.
+
+10) Authorized Use
+Only the renter is permitted to use the bike.
+
+11) Australian Consumer Law
+This agreement does not exclude any guarantees under Australian Consumer Law.
+
+Appendix A: Part Replacement Costs
+                      ''',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey.shade800,
+                          height: 1.6,
+                        ),
+                        textAlign: TextAlign.justify,
                       ),
-                      textAlign: TextAlign.justify,
                     ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Replacement Costs Table',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildReplacementTable(),
                   ],
                 ),
               ),
@@ -128,7 +170,11 @@ class _TermsAndConditionsPageState extends State<TermsAndConditionsPage> {
                   await AuthServices().signOut();
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(
-                      builder: (context) => Calendar_Page(userId: widget.userId,userName: widget.userName,bikeData: widget.bikeData,),
+                      builder: (context) => Calendar_Page(
+                        userId: widget.userId,
+                        userName: widget.userName,
+                        bikeData: widget.bikeData,
+                      ),
                     ),
                   );
                 }
@@ -147,9 +193,38 @@ class _TermsAndConditionsPageState extends State<TermsAndConditionsPage> {
                 ),
               ),
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
+    );
+  }
+  Widget _buildReplacementTable() {
+    return DataTable(
+      columns: const [
+        DataColumn(label: Text('Part', style: TextStyle(fontWeight: FontWeight.bold))),
+        DataColumn(label: Text('Cost', style: TextStyle(fontWeight: FontWeight.bold))),
+      ],
+      rows: const [
+        DataRow(cells: [DataCell(Text('Lights (Front/Back)')), DataCell(Text('\$30'))]),
+        DataRow(cells: [DataCell(Text('Lock')), DataCell(Text('\$80'))]),
+        DataRow(cells: [DataCell(Text('Saddle')), DataCell(Text('\$70'))]),
+        DataRow(cells: [DataCell(Text('Seatpost')), DataCell(Text('\$40'))]),
+        DataRow(cells: [DataCell(Text('Rear Rack')), DataCell(Text('\$130'))]),
+        DataRow(cells: [DataCell(Text('Handlebar')), DataCell(Text('\$60'))]),
+        DataRow(cells: [DataCell(Text('Phone Holder')), DataCell(Text('\$50'))]),
+        DataRow(cells: [DataCell(Text('LCD Display')), DataCell(Text('\$180'))]),
+        DataRow(cells: [DataCell(Text('Battery')), DataCell(Text('\$400 - \$700'))]),
+        DataRow(cells: [DataCell(Text('Brake Cable')), DataCell(Text('\$30'))]),
+        DataRow(cells: [DataCell(Text('Brake Lever')), DataCell(Text('\$70'))]),
+        DataRow(cells: [DataCell(Text('Disc Brake')), DataCell(Text('\$30'))]),
+        DataRow(cells: [DataCell(Text('Chain')), DataCell(Text('\$40'))]),
+        DataRow(cells: [DataCell(Text('Gear Shifters')), DataCell(Text('\$85'))]),
+        DataRow(cells: [DataCell(Text('Shifter Cable')), DataCell(Text('\$65'))]),
+        DataRow(cells: [DataCell(Text('Tyre')), DataCell(Text('\$40'))]),
+        DataRow(cells: [DataCell(Text('Spokes (more than 3)')), DataCell(Text('\$30'))]),
+        DataRow(cells: [DataCell(Text('Wheels')), DataCell(Text('\$140'))]),
+      ],
     );
   }
 }

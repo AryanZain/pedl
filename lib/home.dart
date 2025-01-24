@@ -5,13 +5,16 @@ import 'package:pedl/profile.dart';
 import 'package:pedl/services/auth.dart';
 import 'package:pedl/signin.dart';
 import 'package:pedl/bike.dart';
-
+import 'package:pedl/calendar2_page.dart';
 import 'bike_list_page.dart';
 import 'book_service_page.dart';
+import 'booked_bikes_page.dart';
 import 'bookmark.dart';
 import 'contact_us_page.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+
+import 'notification_page.dart';
 
 class HomeScreen extends StatelessWidget {
   final String userName;
@@ -21,11 +24,12 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bookedBikes = [];
     return Scaffold(
       appBar: _CustomAppBar(),
       drawer: _SideMenu(userName: userName),
       body: _HomeContent(userName: userName, userId: userId, userEmail: userEmail), // Pass userId to _HomeContent
-      bottomNavigationBar: _CustomBottomNavigationBar(userId: userId,userName: userName), // Pass userId
+      bottomNavigationBar: _CustomBottomNavigationBar(userId: userId,userName: userName, bookedBikes: [],), // Pass userId
       floatingActionButton: _CenteredFAB(userId: userId),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
@@ -84,6 +88,7 @@ class _CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
 
 class _CustomAppBarState extends State<_CustomAppBar> {
   String _location = "Fetching location...";
+  final List<String> _notifications = [];
 
   @override
   void initState() {
@@ -162,7 +167,12 @@ class _CustomAppBarState extends State<_CustomAppBar> {
                 IconButton(
                   icon: const Icon(Icons.notifications, color: Colors.white),
                   onPressed: () {
-                    print("Notifications clicked");
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => NotificationPage(notifications: _notifications),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -175,9 +185,10 @@ class _CustomAppBarState extends State<_CustomAppBar> {
 }
 
 class _SideMenu extends StatelessWidget {
-  final String userName; //
+  final String userName;
+  final List<String> _notifications = [];
 
-  const _SideMenu({required this.userName, Key? key}) : super(key: key);
+  _SideMenu({required this.userName, Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -220,12 +231,27 @@ class _SideMenu extends StatelessWidget {
             leading: Icon(Icons.notifications),
             title: Text("Notification"),
 
-            onTap: () => print("Notification clicked"),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NotificationPage(notifications: _notifications),
+                ),
+              );
+            },
           ),
           ListTile(
             leading: Icon(Icons.calendar_today),
             title: Text("Calendar"),
-            onTap: () => print("Calendar clicked"),
+            onTap: () {
+              // Navigate to the CalendarPage
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CalendarPage(),
+                ),
+              );
+            },
           ),
           ListTile(
             leading: Icon(Icons.contact_support),
@@ -740,11 +766,12 @@ class _Card extends StatelessWidget {
   }
 }
 class _CustomBottomNavigationBar extends StatelessWidget {
-  final String userId; // Receive userId
-  final String userName; //
+  final String userId;
+  final String userName;
+  final List<Map<String, dynamic>> bookedBikes;
 
 
-  const _CustomBottomNavigationBar({required this.userId,required this.userName, Key? key}) : super(key: key);
+  const _CustomBottomNavigationBar({required this.userId,required this.userName, required this.bookedBikes, Key? key, }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -766,12 +793,27 @@ class _CustomBottomNavigationBar extends StatelessWidget {
             icon: Icon(CupertinoIcons.bookmark, color: Colors.black),
           ),
           IconButton(
-            onPressed: () => print("Calendar clicked"),
+            onPressed: () {
+              // Navigate to the CalendarPage
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CalendarPage(),
+                ),
+              );
+            },
             icon: Icon(Icons.calendar_today),
           ),
           SizedBox(width: 40), // Space for FAB
           IconButton(
-            onPressed: () => print("Bike clicked"),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BookedBikesPage(bookedBikes: bookedBikes),
+                ),
+              );
+            },
             icon: Icon(Icons.directions_bike),
           ),
           IconButton(

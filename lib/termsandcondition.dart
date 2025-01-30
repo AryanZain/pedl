@@ -9,14 +9,15 @@ import 'calender.dart';
 class termsandcondition extends StatelessWidget {
   final String userId;
   final String userName;
+  final String userEmail;
   final Map<String, dynamic> bikeData;
-  const termsandcondition({required this.userId,required this.userName,required this.bikeData,  Key? key}) : super(key: key);
+  const termsandcondition({required this.userId,required this.userName,required this.bikeData,required this.userEmail,  Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: TermsAndConditionsPage(userId: userId, userName: userName,bikeData: bikeData,), // Pass userId
+      home: TermsAndConditionsPage(userId: userId, userName: userName,bikeData: bikeData,userEmail: userEmail,), // Pass userId
     );
   }
 }
@@ -25,7 +26,8 @@ class TermsAndConditionsPage extends StatefulWidget {
   final String userId;
   final String userName;
   final Map<String, dynamic> bikeData;
-  const TermsAndConditionsPage({required this.userId, required this.userName,required this.bikeData, Key? key}) : super(key: key);
+  final String userEmail;
+  const TermsAndConditionsPage({required this.userId, required this.userName,required this.bikeData,required this.userEmail, Key? key}) : super(key: key);
 
   @override
   _TermsAndConditionsPageState createState() => _TermsAndConditionsPageState();
@@ -48,7 +50,7 @@ class _TermsAndConditionsPageState extends State<TermsAndConditionsPage> {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (context) => BikeDetailsApp(userId: widget.userId, userName: widget.userName,
-                  bikeData: widget.bikeData,
+                  bikeData: widget.bikeData, userEmail: widget.userEmail,
                 ),
               ),
             );
@@ -174,6 +176,7 @@ Appendix A: Part Replacement Costs
                         userId: widget.userId,
                         userName: widget.userName,
                         bikeData: widget.bikeData,
+                        userEmail: widget.userEmail
                       ),
                     ),
                   );

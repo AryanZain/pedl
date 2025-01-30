@@ -26,8 +26,8 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final bookedBikes = [];
     return Scaffold(
-      appBar: _CustomAppBar(),
-      drawer: _SideMenu(userName: userName),
+      appBar: _CustomAppBar(userId: userId,),
+      drawer: _SideMenu(userName: userName, userId: userId,),
       body: _HomeContent(userName: userName, userId: userId, userEmail: userEmail), // Pass userId to _HomeContent
       bottomNavigationBar: _CustomBottomNavigationBar(userId: userId,userName: userName, bookedBikes: [],), // Pass userId
       floatingActionButton: _CenteredFAB(userId: userId),
@@ -79,6 +79,9 @@ class HomeScreen extends StatelessWidget {
 }*/
 //=====================================================================
 class _CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
+  final String userId;
+  const _CustomAppBar({ required this.userId, Key? key}) : super(key: key);
+
   @override
   _CustomAppBarState createState() => _CustomAppBarState();
 
@@ -89,6 +92,7 @@ class _CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
 class _CustomAppBarState extends State<_CustomAppBar> {
   String _location = "Fetching location...";
   final List<String> _notifications = [];
+
 
   @override
   void initState() {
@@ -170,7 +174,7 @@ class _CustomAppBarState extends State<_CustomAppBar> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => NotificationPage(notifications: _notifications),
+                        builder: (context) => NotificationPage(userId: widget.userId),
                       ),
                     );
                   },
@@ -186,9 +190,10 @@ class _CustomAppBarState extends State<_CustomAppBar> {
 
 class _SideMenu extends StatelessWidget {
   final String userName;
+  final String userId;
   final List<String> _notifications = [];
 
-  _SideMenu({required this.userName, Key? key}) : super(key: key);
+  _SideMenu({required this.userName,required this.userId, Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -235,7 +240,7 @@ class _SideMenu extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => NotificationPage(notifications: _notifications),
+                  builder: (context) => NotificationPage(userId: userId),
                 ),
               );
             },
@@ -293,7 +298,7 @@ class _HomeContent extends StatelessWidget {
       //padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       children: [
         SizedBox(height: 20),
-        _SearchAndCategories(userName: userName,userId: userId),
+        _SearchAndCategories(userName: userName,userId: userId,userEmail: userEmail,),
         SizedBox(height: 10),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 0),
@@ -309,7 +314,7 @@ class _HomeContent extends StatelessWidget {
           ),
         ),
         SizedBox(height: 20),
-        _YouMayLikeSection(userId: userId, userName: userName), // Pass userId
+        _YouMayLikeSection(userId: userId, userName: userName, userEmail: userEmail,), // Pass userId
         SizedBox(height: 40),
         _CurrentTripSection(userEmail: userEmail),
         //SizedBox(height: 20),
@@ -324,8 +329,9 @@ class _HomeContent extends StatelessWidget {
 class _SearchAndCategories extends StatefulWidget {
   final String userName;
   final String userId;
+  final String userEmail;
 
-  const _SearchAndCategories({ required this.userName,required this.userId, Key? key}) : super(key: key);
+  const _SearchAndCategories({ required this.userName,required this.userId,required this.userEmail, Key? key}) : super(key: key);
   @override
   _SearchAndCategoriesState createState() => _SearchAndCategoriesState();
 }
@@ -520,7 +526,8 @@ class _SearchAndCategoriesState extends State<_SearchAndCategories> {
                 builder: (context) => BikeDetailsApp(
                   bikeData: bike,
                   userName: widget.userName,
-                  userId: widget.userId, // Pass userId to details page
+                  userId: widget.userId,
+                  userEmail: widget.userEmail,
                 ),
               ),
             );
@@ -536,7 +543,8 @@ class _SearchAndCategoriesState extends State<_SearchAndCategories> {
 class _YouMayLikeSection extends StatelessWidget {
   final String userId;
   final String userName;
-  _YouMayLikeSection({required this.userId, required this.userName, Key? key}) : super(key: key);
+  final String userEmail;
+  _YouMayLikeSection({required this.userId, required this.userName,required this.userEmail, Key? key}) : super(key: key);
 
   final List<Map<String, dynamic>> bikes = [
     {
@@ -644,7 +652,7 @@ class _YouMayLikeSection extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => BikeDetailsApp(bikeData: bike, userId: userId, userName: userName,),
+                      builder: (context) => BikeDetailsApp(bikeData: bike, userId: userId, userName: userName,userEmail: userEmail,),
                     ),
                   );
                 },
@@ -810,7 +818,7 @@ class _CustomBottomNavigationBar extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => BookedBikesPage(bookedBikes: bookedBikes),
+                  builder: (context) => BookedBikesPage(userId: userId),
                 ),
               );
             },

@@ -11,14 +11,15 @@ class Calendar_Page extends StatelessWidget {
   final String userId;
   final String userName;
   final Map<String, dynamic> bikeData;
-  const Calendar_Page({required this.userId,required this.userName,required this.bikeData,  Key? key}) : super(key: key);
+  final String userEmail;
+  const Calendar_Page({required this.userId,required this.userName,required this.bikeData,required this.userEmail,  Key? key}) : super(key: key);
 
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: CalendarApp(userId: userId, userName: userName,bikeData: bikeData,),
+      home: CalendarApp(userId: userId, userName: userName,bikeData: bikeData,userEmail: userEmail,),
     );
   }
 }
@@ -27,13 +28,14 @@ class CalendarApp extends StatelessWidget {
   final String userId;
   final String userName;
   final Map<String, dynamic> bikeData;
-  const CalendarApp({required this.userId,required this.userName,required this.bikeData,  Key? key}) : super(key: key);
+  final String userEmail;
+  const CalendarApp({required this.userId,required this.userName,required this.bikeData,required this.userEmail,  Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: CalendarPage(userId: userId, userName: userName,bikeData: bikeData,),
+      home: CalendarPage(userId: userId, userName: userName,bikeData: bikeData,userEmail: userEmail,),
     );
   }
 }
@@ -42,7 +44,8 @@ class CalendarPage extends StatefulWidget {
   final String userId;
   final String userName;
   final Map<String, dynamic> bikeData;
-  const CalendarPage({required this.userId,required this.userName,required this.bikeData,  Key? key}) : super(key: key);
+  final String userEmail;
+  const CalendarPage({required this.userId,required this.userName,required this.bikeData,required this.userEmail,  Key? key}) : super(key: key);
 
   @override
   State<CalendarPage> createState() => _CalendarPageState();
@@ -113,7 +116,7 @@ class _CalendarPageState extends State<CalendarPage> {
             await AuthServices().signOut();
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => termsandcondition(userId: widget.userId, userName: widget.userName,bikeData: widget.bikeData,),
+                builder: (context) => termsandcondition(userId: widget.userId, userName: widget.userName,bikeData: widget.bikeData,userEmail: widget.userEmail,),
               ),
             );
           },
@@ -306,16 +309,24 @@ class _CalendarPageState extends State<CalendarPage> {
                       ),
                       actions: [
                         TextButton(
-                          onPressed: () async {
-                            await AuthServices().signOut();
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(
-                                builder: (context) => checkout(
+                          onPressed: () {
+                            if (_selectedPickupDay != null && _pickupTime != null) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CheckoutPage(
+                                    bikeData: widget.bikeData,
+                                    pickupDate: _selectedPickupDay!,
+                                    dropoffDate: _selectedDropOffDay!,
+                                    pickupTime: _pickupTime!,
+                                    dropoffTime: _dropOffTime!,
                                     userId: widget.userId,
                                     userName: widget.userName,
-                                    bikeData: widget.bikeData),
-                              ),
-                            );
+                                    userEmail: widget.userEmail,
+                                  ),
+                                ),
+                              );
+                            }
                           },
                           child: const Text(
                             'OK',

@@ -15,6 +15,7 @@ class BikeDetailsApp extends StatelessWidget {
   final Map<String, dynamic> bikeData;
   final String userId;
   final String userName;
+  final String userEmail;
 
 
 
@@ -22,6 +23,7 @@ class BikeDetailsApp extends StatelessWidget {
     required this.bikeData,
     required this.userId,
     required this.userName,
+    required this.userEmail,
     Key? key,
   }) : super(key: key);
 
@@ -30,7 +32,7 @@ class BikeDetailsApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: 'Roboto'),
-      home: BikeDetailsPage(bikeData: bikeData, userId: userId,userName: userName, ),
+      home: BikeDetailsPage(bikeData: bikeData, userId: userId,userName: userName,  userEmail: userEmail, ),
     );
   }
 }
@@ -40,11 +42,13 @@ class BikeDetailsPage extends StatefulWidget {
   final Map<String, dynamic> bikeData;
   final String userId;
   final String userName;
+  final String userEmail;
 
   const BikeDetailsPage({
     required this.bikeData,
     required this.userId,
     required this.userName,
+    required this.userEmail,
     Key? key,
   }) : super(key: key);
 
@@ -110,7 +114,7 @@ class _BikeDetailsPageState extends State<BikeDetailsPage> {
             await AuthServices().signOut();
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => HomeScreen(userName:  widget.userName,userId: widget.userId,userEmail: "abcd@gmail.com", ),
+                builder: (context) => HomeScreen(userName:  widget.userName,userId: widget.userId,userEmail: widget.userEmail, ),
               ),
             );
           },
@@ -238,7 +242,7 @@ class _BikeDetailsPageState extends State<BikeDetailsPage> {
                   await AuthServices().signOut();
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(
-                      builder: (context) => termsandcondition(userId: widget.userId, userName: widget.userName, bikeData: widget.bikeData,),
+                      builder: (context) => termsandcondition(userId: widget.userId, userName: widget.userName, bikeData: widget.bikeData, userEmail: widget.userEmail,),
                     ),
                   );
                 },

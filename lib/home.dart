@@ -1,11 +1,14 @@
 // Updated home.dart file
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pedl/profile.dart';
 import 'package:pedl/services/auth.dart';
+import 'package:pedl/services/local_storage_manager.dart';
 import 'package:pedl/signin.dart';
 import 'package:pedl/bike.dart';
 import 'package:pedl/calendar2_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'bike_list_page.dart';
 import 'book_service_page.dart';
 import 'booked_bikes_page.dart';
@@ -20,17 +23,34 @@ class HomeScreen extends StatelessWidget {
   final String userName;
   final String userId;
   final String userEmail;
-  const HomeScreen({required this.userName, required this.userId, required this.userEmail, Key? key}) : super(key: key);
+  const HomeScreen(
+      {required this.userName,
+      required this.userId,
+      required this.userEmail,
+      Key? key})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final bookedBikes = [];
     return Scaffold(
-      appBar: _CustomAppBar(userId: userId,),
-      drawer: _SideMenu(userName: userName, userId: userId,),
-      body: _HomeContent(userName: userName, userId: userId, userEmail: userEmail), // Pass userId to _HomeContent
-      bottomNavigationBar: _CustomBottomNavigationBar(userId: userId,userName: userName, bookedBikes: [],), // Pass userId
-      floatingActionButton: _CenteredFAB(userId: userId),
+      appBar: _CustomAppBar(
+        userId: userId,
+      ),
+      drawer: _SideMenu(
+        userName: userName,
+        userId: userId,
+      ),
+      body: _HomeContent(
+          userName: userName,
+          userId: userId,
+          userEmail: userEmail), // Pass userId to _HomeContent
+      bottomNavigationBar: _CustomBottomNavigationBar(
+        userId: userId,
+        userName: userName,
+        bookedBikes: [],
+      ), // Pass userId
+      floatingActionButton: _CenteredFAB(userId: userId, userName: userName, userEmail: userEmail,),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
@@ -80,7 +100,7 @@ class HomeScreen extends StatelessWidget {
 //=====================================================================
 class _CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String userId;
-  const _CustomAppBar({ required this.userId, Key? key}) : super(key: key);
+  const _CustomAppBar({required this.userId, Key? key}) : super(key: key);
 
   @override
   _CustomAppBarState createState() => _CustomAppBarState();
@@ -91,13 +111,33 @@ class _CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
 
 class _CustomAppBarState extends State<_CustomAppBar> {
   String _location = "Fetching location...";
-  final List<String> _notifications = [];
-
+  int _unreadCount = 0;
 
   @override
   void initState() {
     super.initState();
     _fetchLocation();
+    _loadUnreadCount();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _unreadCount = prefs.getInt('unread_${widget.userId}') ?? 0;
+    });
+  }
+
+  Future<int> _getUnreadCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('unread_${widget.userId}') ?? 0;
+  }
+
+  void _resetUnreadCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('unread_${widget.userId}', 0);
+    setState(() {
+      _unreadCount = 0; // Reset the unread count
+    });
   }
 
   Future<void> _fetchLocation() async {
@@ -117,16 +157,16 @@ class _CustomAppBarState extends State<_CustomAppBar> {
       // Debug: Print fetched latitude and longitude
       print("Latitude: ${position.latitude}, Longitude: ${position.longitude}");
 
-
       // Reverse geocode to get the address
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-          position.latitude, position.longitude);
+      List<Placemark> placemarks =
+          await placemarkFromCoordinates(position.latitude, position.longitude);
 
       // Use the first placemark to extract the location details
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
         setState(() {
-          _location = "${place.locality}, ${place.administrativeArea}, ${place.country}";
+          _location =
+              "${place.locality}, ${place.administrativeArea}, ${place.country}";
         });
       } else {
         setState(() {
@@ -169,14 +209,27 @@ class _CustomAppBarState extends State<_CustomAppBar> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.notifications, color: Colors.white),
+                  icon: Badge(
+                    label: _unreadCount > 0
+                        ? Text(
+                            '$_unreadCount',
+                            style: const TextStyle(color: Colors.white),
+                          )
+                        : null, // Hide badge if no unread notifications
+                    child: const Icon(Icons.notifications, color: Colors.white),
+                  ),
                   onPressed: () {
+                    _resetUnreadCount(); // Reset unread count when notifications are opened
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => NotificationPage(userId: widget.userId),
+                        builder: (context) =>
+                            NotificationPage(userId: widget.userId),
                       ),
-                    );
+                    ).then((_) {
+                      // Refresh the unread count after returning from the notification page
+                      _loadUnreadCount();
+                    });
                   },
                 ),
               ],
@@ -188,12 +241,35 @@ class _CustomAppBarState extends State<_CustomAppBar> {
   }
 }
 
-class _SideMenu extends StatelessWidget {
+class _SideMenu extends StatefulWidget {
   final String userName;
   final String userId;
-  final List<String> _notifications = [];
 
-  _SideMenu({required this.userName,required this.userId, Key? key}) : super(key: key);
+  const _SideMenu({required this.userName, required this.userId, Key? key})
+      : super(key: key);
+
+  @override
+  _SideMenuState createState() => _SideMenuState();
+}
+
+class _SideMenuState extends State<_SideMenu> {
+  String? profilePicturePath;
+  final LocalStorageManager _storage = LocalStorageManager();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfilePicture();
+  }
+
+  // Load saved profile picture from local storage
+  Future<void> _loadProfilePicture() async {
+    final data = await _storage.loadUserData();
+    setState(() {
+      profilePicturePath = data['profileImage'];
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -201,55 +277,53 @@ class _SideMenu extends StatelessWidget {
       child: Column(
         children: [
           UserAccountsDrawerHeader(
-            accountName: Text("$userName", style: TextStyle(fontSize: 24, color: Colors.black)),
+            accountName: Text(widget.userName,
+                style: const TextStyle(fontSize: 24, color: Colors.black)),
             accountEmail: null,
             currentAccountPicture: CircleAvatar(
               backgroundColor: Colors.grey.shade800,
-              child: Text("Z", style: TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold)),
+              backgroundImage: profilePicturePath != null
+                  ? FileImage(File(profilePicturePath!))
+                  : null,
+              child: profilePicturePath == null
+                  ? const Icon(Icons.person, size: 50, color: Colors.white)
+                  : null,
             ),
-            decoration: BoxDecoration(
-                color: Colors.white
-            ),
+            decoration: const BoxDecoration(color: Colors.white),
           ),
           ListTile(
-              leading: Icon(Icons.person),
-              title: Text("My Profile"),
-              onTap: () async{
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ProfilePage(
-                      userName: "$userName",
-                      aboutMe: "Enter Your Description",
-                      interests: ["Games Online", "Music"],
-                    ),
-                  ),
-                );
-                /*Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => const ProfilePage(),
-                ),
-              );*/
-              }
-          ),
-          ListTile(
-            leading: Icon(Icons.notifications),
-            title: Text("Notification"),
-
+            leading: const Icon(Icons.person),
+            title: const Text("My Profile"),
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => NotificationPage(userId: userId),
+                  builder: (context) => ProfilePage(
+                    userName: widget.userName,
+                    /*aboutMe: "Enter Your Description",
+                    interests: ["Games Online", "Music"],*/
+                  ),
+                ),
+              ).then((_) =>
+                  _loadProfilePicture()); // Reload profile picture after returning
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.notifications),
+            title: const Text("Notification"),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NotificationPage(userId: widget.userId),
                 ),
               );
             },
           ),
           ListTile(
-            leading: Icon(Icons.calendar_today),
-            title: Text("Calendar"),
+            leading: const Icon(Icons.calendar_today),
+            title: const Text("Calendar"),
             onTap: () {
-              // Navigate to the CalendarPage
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -259,8 +333,8 @@ class _SideMenu extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: Icon(Icons.contact_support),
-            title: Text("Contact Us"),
+            leading: const Icon(Icons.contact_support),
+            title: const Text("Contact Us"),
             onTap: () {
               Navigator.push(
                 context,
@@ -269,14 +343,12 @@ class _SideMenu extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: Icon(Icons.logout),
-            title: Text("Sign Out"),
+            leading: const Icon(Icons.logout),
+            title: const Text("Sign Out"),
             onTap: () async {
               await AuthServices().signOut();
               Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => const SigninScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const SigninScreen()),
               );
             },
           ),
@@ -290,7 +362,12 @@ class _HomeContent extends StatelessWidget {
   final String userName;
   final String userId;
   final String userEmail;
-  const _HomeContent({required this.userName, required this.userId, required this.userEmail, Key? key}) : super(key: key);
+  const _HomeContent(
+      {required this.userName,
+      required this.userId,
+      required this.userEmail,
+      Key? key})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -298,7 +375,11 @@ class _HomeContent extends StatelessWidget {
       //padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       children: [
         SizedBox(height: 20),
-        _SearchAndCategories(userName: userName,userId: userId,userEmail: userEmail,),
+        _SearchAndCategories(
+          userName: userName,
+          userId: userId,
+          userEmail: userEmail,
+        ),
         SizedBox(height: 10),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 0),
@@ -314,7 +395,11 @@ class _HomeContent extends StatelessWidget {
           ),
         ),
         SizedBox(height: 20),
-        _YouMayLikeSection(userId: userId, userName: userName, userEmail: userEmail,), // Pass userId
+        _YouMayLikeSection(
+          userId: userId,
+          userName: userName,
+          userEmail: userEmail,
+        ), // Pass userId
         SizedBox(height: 40),
         _CurrentTripSection(userEmail: userEmail),
         //SizedBox(height: 20),
@@ -325,20 +410,27 @@ class _HomeContent extends StatelessWidget {
     );
   }
 }
+
 //*** CHANGES FOR SEARCH BAR ***
 class _SearchAndCategories extends StatefulWidget {
   final String userName;
   final String userId;
   final String userEmail;
 
-  const _SearchAndCategories({ required this.userName,required this.userId,required this.userEmail, Key? key}) : super(key: key);
+  const _SearchAndCategories(
+      {required this.userName,
+      required this.userId,
+      required this.userEmail,
+      Key? key})
+      : super(key: key);
   @override
   _SearchAndCategoriesState createState() => _SearchAndCategoriesState();
 }
 
 class _SearchAndCategoriesState extends State<_SearchAndCategories> {
   final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode(); // Add FocusNode for the search bar
+  final FocusNode _searchFocusNode =
+      FocusNode(); // Add FocusNode for the search bar
   List<Map<String, dynamic>> filteredBikes = [];
   bool _isSearchActive = false;
   final List<Map<String, dynamic>> allBikes = [
@@ -346,7 +438,11 @@ class _SearchAndCategoriesState extends State<_SearchAndCategories> {
       'title': 'E-MONO 26″ SE-26L03',
       'subtitle': 'From \$65 per week',
       'image': 'assets/images/bike1.png',
-      'specifications': ['FRAME: Lightweight Aluminum', 'SUSPENSION: 40mm Fork', 'BRAKES: Disc Brakes 160mm'],
+      'specifications': [
+        'FRAME: Lightweight Aluminum',
+        'SUSPENSION: 40mm Fork',
+        'BRAKES: Disc Brakes 160mm'
+      ],
     },
     {
       'title': 'E-MONO 27.5″ 27M002',
@@ -410,7 +506,6 @@ class _SearchAndCategoriesState extends State<_SearchAndCategories> {
     },
   ];
 
-
   @override
   void initState() {
     super.initState();
@@ -424,13 +519,11 @@ class _SearchAndCategoriesState extends State<_SearchAndCategories> {
     });
   }
 
-
-
-
   @override
   void dispose() {
     _searchController.dispose();
-    _searchFocusNode.dispose(); // Dispose of the FocusNode to avoid memory leaks
+    _searchFocusNode
+        .dispose(); // Dispose of the FocusNode to avoid memory leaks
     super.dispose();
   }
 
@@ -455,7 +548,8 @@ class _SearchAndCategoriesState extends State<_SearchAndCategories> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: _dismissKeyboard, // Detect taps outside the search bar
-      behavior: HitTestBehavior.opaque, // Ensure GestureDetector captures all taps
+      behavior:
+          HitTestBehavior.opaque, // Ensure GestureDetector captures all taps
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -515,7 +609,8 @@ class _SearchAndCategoriesState extends State<_SearchAndCategories> {
     return Column(
       children: filteredBikes.map((bike) {
         return ListTile(
-          leading: Image.asset(bike['image'], width: 50, height: 50, fit: BoxFit.cover),
+          leading: Image.asset(bike['image'],
+              width: 50, height: 50, fit: BoxFit.cover),
           title: Text(bike['title']),
           subtitle: Text(bike['subtitle']),
           onTap: () {
@@ -538,13 +633,17 @@ class _SearchAndCategoriesState extends State<_SearchAndCategories> {
   }
 }
 
-
 //YOU MAY LIKE SECTION
 class _YouMayLikeSection extends StatelessWidget {
   final String userId;
   final String userName;
   final String userEmail;
-  _YouMayLikeSection({required this.userId, required this.userName,required this.userEmail, Key? key}) : super(key: key);
+  _YouMayLikeSection(
+      {required this.userId,
+      required this.userName,
+      required this.userEmail,
+      Key? key})
+      : super(key: key);
 
   final List<Map<String, dynamic>> bikes = [
     {
@@ -631,7 +730,12 @@ class _YouMayLikeSection extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => BikeListPage(userId: userId, bikes: bikes), // Pass userId and bikes
+                builder: (context) => BikeListPage(
+                  userId: userId,
+                  userName: userName,
+                  userEmail: userEmail,
+                  bikes: bikes,
+                ),
               ),
             );
           },
@@ -652,7 +756,12 @@ class _YouMayLikeSection extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => BikeDetailsApp(bikeData: bike, userId: userId, userName: userName,userEmail: userEmail,),
+                      builder: (context) => BikeDetailsApp(
+                        bikeData: bike,
+                        userId: userId,
+                        userName: userName,
+                        userEmail: userEmail,
+                      ),
                     ),
                   );
                 },
@@ -664,9 +773,11 @@ class _YouMayLikeSection extends StatelessWidget {
     );
   }
 }
+
 class _CurrentTripSection extends StatelessWidget {
   final String userEmail;
-  const _CurrentTripSection({required this.userEmail, Key? key}) : super(key: key);
+  const _CurrentTripSection({required this.userEmail, Key? key})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -681,7 +792,8 @@ class _CurrentTripSection extends StatelessWidget {
           trailing: ElevatedButton(
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => BookServicePage(userEmail: userEmail)),
+              MaterialPageRoute(
+                  builder: (context) => BookServicePage(userEmail: userEmail)),
             ),
             child: Text("BOOK"),
           ),
@@ -717,7 +829,8 @@ class _SectionHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(title,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           TextButton(
             onPressed: onSeeAllPressed, // Use the callback here
             child: Text("See All"),
@@ -773,13 +886,18 @@ class _Card extends StatelessWidget {
     );
   }
 }
+
 class _CustomBottomNavigationBar extends StatelessWidget {
   final String userId;
   final String userName;
   final List<Map<String, dynamic>> bookedBikes;
 
-
-  const _CustomBottomNavigationBar({required this.userId,required this.userName, required this.bookedBikes, Key? key, }) : super(key: key);
+  const _CustomBottomNavigationBar({
+    required this.userId,
+    required this.userName,
+    required this.bookedBikes,
+    Key? key,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -794,10 +912,11 @@ class _CustomBottomNavigationBar extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => BookmarkPage(userId: userId), // Pass userId
+                  builder: (context) =>
+                      BookmarkPage(userId: userId), // Pass userId
                 ),
               );
-    },
+            },
             icon: Icon(CupertinoIcons.bookmark, color: Colors.black),
           ),
           IconButton(
@@ -825,14 +944,14 @@ class _CustomBottomNavigationBar extends StatelessWidget {
             icon: Icon(Icons.directions_bike),
           ),
           IconButton(
-            onPressed: () async{
+            onPressed: () async {
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => ProfilePage(
                     userName: "$userName",
-                    aboutMe: "Enter Your Description",
-                    interests: ["Games Online", "Music"],
+                    /*aboutMe: "Enter Your Description",
+                    interests: ["Games Online", "Music"],*/
                   ),
                 ),
               );
@@ -846,56 +965,99 @@ class _CustomBottomNavigationBar extends StatelessWidget {
 }
 
 class _CenteredFAB extends StatelessWidget {
-  final String userId; // Add userId as a parameter
-  const _CenteredFAB({required this.userId, Key? key}) : super(key: key);
+  final String userId;
+  final String userName;
+  final String userEmail;
+  const _CenteredFAB({required this.userId,required this.userName,required this.userEmail, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     // Replace this with your actual bike data
-    final bikes = [
+    final List<Map<String, dynamic>> bikes = [
       {
         'title': 'E-MONO 26″ SE-26L03',
         'subtitle': 'From \$65 per week',
         'image': 'assets/images/bike1.png',
+        'specifications': [
+          'FRAME: Lightweight Aluminum',
+          'SUSPENSION: 40mm Fork',
+          'BRAKES: Disc Brakes 160mm',
+        ],
       },
       {
         'title': 'E-MONO 27.5″ 27M002',
         'subtitle': 'From \$75 per week',
         'image': 'assets/images/bike2.png',
+        'specifications': [
+          'FRAME: Steel',
+          'WHEELS: 26-inch',
+          'BRAKES: V-Brakes',
+        ],
       },
       {
         'title': 'E-mono’s Folding Bike',
         'subtitle': 'From \$89 per week',
         'image': 'assets/images/bike3.png',
-      },
-      {
-        'title': 'NCM Moscow Electric Mountain Bike',
-        'subtitle': 'From \$85 per week',
-        'image': 'assets/images/bike4.png',
-      },
-      {
-        'title': 'E-MONO ELECTRIC URBAN BIKE SE-26L03',
-        'subtitle': 'From \$95 per week',
-        'image': 'assets/images/bike5.png',
-      },
-      {
-        'title': 'E-MONO 20 ELECTRIC CARGO BIKE SE-20B01',
-        'subtitle': 'From \$100 per week',
-        'image': 'assets/images/bike6.png',
+        'specifications': [
+          'FRAME: Steel',
+          'WHEELS: 26-inch',
+          'BRAKES: V-Brakes',
+        ],
       },
       {
         'title': 'SUNMONO 26 ELECTRIC URBAN BIKE SE-26L002',
         'subtitle': 'From \$85 per week',
         'image': 'assets/images/bike7.png',
+        'specifications': [
+          'FRAME: Steel',
+          'WHEELS: 26-inch',
+          'BRAKES: V-Brakes',
+        ],
+      },
+      {
+        'title': 'E-MONO 20 CARGO BIKE',
+        'subtitle': 'From \$100 per week',
+        'image': 'assets/images/bike6.png',
+        'specifications': [
+          'FRAME: Steel',
+          'WHEELS: 26-inch',
+          'BRAKES: V-Brakes',
+        ],
+      },
+      {
+        'title': 'E-MONO ELECTRIC URBAN BIKE',
+        'subtitle': 'From \$95 per week',
+        'image': 'assets/images/bike5.png',
+        'specifications': [
+          'FRAME: Steel',
+          'WHEELS: 26-inch',
+          'BRAKES: V-Brakes',
+        ],
+      },
+      {
+        'title': 'NCM Moscow Electric Mountain Bike',
+        'subtitle': 'From \$85 per week',
+        'image': 'assets/images/bike4.png',
+        'specifications': [
+          'FRAME: Steel',
+          'WHEELS: 26-inch',
+          'BRAKES: V-Brakes',
+        ],
       },
     ];
+
 
     return FloatingActionButton(
       onPressed: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => BikeListPage(bikes: bikes,userId: userId),
+            builder: (context) => BikeListPage(
+              userId: userId,
+              userName: userName,
+              userEmail: userEmail,
+              bikes: bikes,
+            ),
           ),
         );
       },

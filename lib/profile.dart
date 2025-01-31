@@ -1,17 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:pedl/services/profile_picture_manager.dart';
-
+import 'package:image_picker/image_picker.dart';
+import 'package:pedl/services/local_storage_manager.dart';
 
 class ProfilePage extends StatefulWidget {
-  final String userName; // Dynamically passed user name
-  final String aboutMe; // Dynamically passed aboutMe description
-  final List<String> interests; // List of interests
+  final String userName;
 
   const ProfilePage({
     Key? key,
     required this.userName,
-    required this.aboutMe,
-    required this.interests,
   }) : super(key: key);
 
   @override
@@ -21,60 +18,72 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   late String aboutMe;
   late List<String> interests;
-  String? profilePictureUrl;
-  final ProfilePictureManager _profilePictureManager = ProfilePictureManager();
+  String? profilePicturePath;
+  final LocalStorageManager _storage = LocalStorageManager();
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
-    aboutMe = widget.aboutMe;
-    interests = widget.interests;
-
-    _loadProfilePicture();
+    _loadUserData();
   }
 
-  void _loadProfilePicture() async {
-    final url = await _profilePictureManager.getProfilePictureUrl();
+  // Load user data from local storage
+  void _loadUserData() async {
+    final data = await _storage.loadUserData();
     setState(() {
-      profilePictureUrl = url;
+      aboutMe = data['aboutMe'];
+      interests = data['interests'];
+      profilePicturePath = data['profileImage'];
     });
   }
+
+  // Handle profile picture upload
   void _uploadProfilePicture() async {
-    final url = await _profilePictureManager.uploadProfilePicture();
-    if (url != null) {
-      setState(() {
-        profilePictureUrl = url;
-      });
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image == null) return;
+
+    final String? path = await _storage.saveImageLocally(image);
+    if (path != null) {
+      await _storage.saveUserData(
+        aboutMe: aboutMe,
+        interests: interests,
+        imagePath: path,
+      );
+      setState(() => profilePicturePath = path);
     }
   }
 
+  // Edit About Me dialog
   void _editProfile() {
+    TextEditingController aboutMeController = TextEditingController(text: aboutMe);
+
     showDialog(
       context: context,
       builder: (context) {
-        TextEditingController aboutMeController = TextEditingController(text: aboutMe);
         return AlertDialog(
           title: const Text("Edit About Me"),
           content: TextField(
             controller: aboutMeController,
             maxLines: 4,
             decoration: const InputDecoration(
-              hintText: "Enter details about yourself...",
+              hintText: "Tell us about yourself...",
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.pop(context),
               child: const Text("Cancel"),
             ),
             ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  aboutMe = aboutMeController.text;
-                });
-                Navigator.of(context).pop();
+              onPressed: () async {
+                setState(() => aboutMe = aboutMeController.text);
+                await _storage.saveUserData(
+                  aboutMe: aboutMe,
+                  interests: interests,
+                  imagePath: profilePicturePath,
+                );
+                Navigator.pop(context);
               },
               child: const Text("Save"),
             ),
@@ -84,20 +93,21 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  // Change Interests dialog
   void _changeInterests() {
+    List<String> allInterests = [
+      "Games Online",
+      "Concert",
+      "Music",
+      "Art",
+      "Movie",
+      "Others"
+    ];
+    List<String> selectedInterests = List.from(interests);
+
     showDialog(
       context: context,
       builder: (context) {
-        List<String> allInterests = [
-          "Games Online",
-          "Concert",
-          "Music",
-          "Art",
-          "Movie",
-          "Others"
-        ];
-        List<String> selectedInterests = List.from(interests);
-
         return AlertDialog(
           title: const Text("Change Interests"),
           content: StatefulBuilder(
@@ -110,15 +120,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   return FilterChip(
                     label: Text(interest),
                     selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          selectedInterests.add(interest);
-                        } else {
-                          selectedInterests.remove(interest);
-                        }
-                      });
-                    },
+                    onSelected: (selected) => setState(() {
+                      selected ? selectedInterests.add(interest)
+                          : selectedInterests.remove(interest);
+                    }),
                   );
                 }).toList(),
               );
@@ -126,17 +131,18 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.pop(context),
               child: const Text("Cancel"),
             ),
             ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  interests = selectedInterests;
-                });
-                Navigator.of(context).pop();
+              onPressed: () async {
+                setState(() => interests = selectedInterests);
+                await _storage.saveUserData(
+                  aboutMe: aboutMe,
+                  interests: interests,
+                  imagePath: profilePicturePath,
+                );
+                Navigator.pop(context);
               },
               child: const Text("Save"),
             ),
@@ -155,9 +161,7 @@ class _ProfilePageState extends State<ProfilePage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.of(context).pop(); // Go back to the previous screen
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text("Profile", style: TextStyle(color: Colors.black)),
         centerTitle: true,
@@ -172,12 +176,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 onTap: _uploadProfilePicture,
                 child: CircleAvatar(
                   radius: 50,
-                  backgroundColor: Colors.grey,
-                  backgroundImage: profilePictureUrl != null
-                      ? NetworkImage(profilePictureUrl!) as ImageProvider
+                  backgroundColor: Colors.grey[300],
+                  backgroundImage: profilePicturePath != null
+                      ? FileImage(File(profilePicturePath!))
                       : null,
-                  child: profilePictureUrl == null
-                      ? const Icon(Icons.person, size: 50, color: Colors.white)
+                  child: profilePicturePath == null
+                      ? const Icon(Icons.add_a_photo, size: 30, color: Colors.black54)
                       : null,
                 ),
               ),
@@ -193,64 +197,39 @@ class _ProfilePageState extends State<ProfilePage> {
               ElevatedButton.icon(
                 onPressed: _editProfile,
                 icon: const Icon(Icons.edit),
-                label: const Text("Edit Profile"),
+                label: const Text("Edit About Me", style: const TextStyle(color: Colors.white)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  textStyle: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  backgroundColor: Colors.redAccent,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "About Me",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 42),
+              _buildSectionTitle("About Me",),
+              const SizedBox(height: 20),
               Text(
                 aboutMe,
-                style: const TextStyle(fontSize: 16, color: Colors.black54),
-                textAlign: TextAlign.left,
+                style: const TextStyle(fontSize: 16, color: Colors.black87),
               ),
               const Divider(thickness: 1),
-              const SizedBox(height: 16),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Interest",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 60),
+              _buildSectionTitle("Interests"),
+              const SizedBox(height: 18),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: interests.map((interest) {
-                  return Chip(
-                    label: Text(interest),
-                    backgroundColor: Colors.lightBlueAccent,
-                    labelStyle: const TextStyle(color: Colors.white),
-                  );
-                }).toList(),
+                children: interests.map((interest) => Chip(
+                  label: Text(interest, style: const TextStyle(color: Colors.white)),
+                  backgroundColor: Colors.redAccent,
+                  labelStyle: const TextStyle(color: Colors.black87),
+                )).toList(),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 26),
               ElevatedButton.icon(
                 onPressed: _changeInterests,
                 icon: const Icon(Icons.edit),
-                label: const Text("Change"),
+                label: const Text("Change Interests", style: const TextStyle(fontSize: 16, color: Colors.white)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.redAccent,
                   shape: RoundedRectangleBorder(
@@ -260,6 +239,20 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.black,
         ),
       ),
     );

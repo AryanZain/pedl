@@ -34,49 +34,16 @@ class _BookServicePageState extends State<BookServicePage> {
   }
 
   Future<void> _showNotification(String message) async {
-    const androidDetails = AndroidNotificationDetails('service_channel', 'Service Notifications',
-        channelDescription: 'Notifications for service bookings', importance: Importance.high, priority: Priority.high);
+    const androidDetails = AndroidNotificationDetails(
+      'service_channel',
+      'Service Notifications',
+      channelDescription: 'Notifications for service bookings',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
     const notificationDetails = NotificationDetails(android: androidDetails);
     await _notificationsPlugin.show(0, 'Service Reminder', message, notificationDetails);
   }
-
- /* Future<void> _sendEmail() async {
-    final Email email = Email(
-      body: 'Your bike service is confirmed for ${_selectedDate!.toLocal()} at ${_selectedTime!.format(context)}.',
-      subject: 'Bike Service Confirmation',
-      recipients: [widget.userEmail],
-      isHTML: false,
-    );
-    await FlutterEmailSender.send(email);
-  }*/
-  /*Future<void> _sendEmail() async {
-    // Ensure the date and time are selected
-    if (_selectedDate == null || _selectedTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select both a date and time before booking.')),
-      );
-      return;
-    }
-    // Prepare the email details
-    final Email email = Email(
-      body:
-      'Hello,\n\nYour bike service is confirmed for ${_selectedDate!.toLocal()} at ${_selectedTime!.format(context)}.\n\nThank you for choosing us!',
-      subject: 'Bike Service Confirmation',
-      recipients: [widget.userEmail],
-      cc: [],
-      bcc: [],
-      isHTML: false,
-    );
-
-    try {
-      await FlutterEmailSender.send(email);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Confirmation email sent to ${widget.userEmail}')));
-    } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send email.')));
-    }
-  }*/
-
-
 
   Future<void> _sendEmail() async {
     // Define SMTP server details
@@ -104,50 +71,17 @@ Thank you for choosing us!
       // Send the email
       final sendReport = await mailer.send(emailMessage, smtpServer);
       print('Email sent: ${sendReport.toString()}');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Confirmation email sent to ${widget.userEmail}')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Confirmation email sent to ${widget.userEmail}')),
+      );
     } on mailer.MailerException catch (e) {
       // Handle email sending errors
       print('Email sending failed: $e');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send email.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send email.')),
+      );
     }
   }
-
-
-
-
-
-
-
-  /*void _confirmBooking() async {
-    if (_selectedDate == null || _selectedTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select both a date and time for your service.')),
-      );
-      return;
-    }
-
-    final formattedDate = '${_selectedDate!.day}-${_selectedDate!.month}-${_selectedDate!.year}';
-    final formattedTime = _selectedTime!.format(context);
-
-    // Show confirmation dialog
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Booking Confirmed'),
-        content: Text('Your service is booked for $formattedDate at $formattedTime.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('OK'),
-          ),
-        ],
-      ),
-    );
-
-    // Send email and in-app notification
-    await _sendEmail();
-    await _showNotification('Your bike service is on $formattedDate at $formattedTime.');
-  }*/
 
   Future<void> _confirmBooking() async {
     if (_selectedDate == null || _selectedTime == null) {
@@ -179,27 +113,28 @@ Thank you for choosing us!
     await _showNotification('Your bike service is on $formattedDate at $formattedTime.');
   }
 
-
-
-
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Book Service',
-            style: TextStyle( color: Colors.white)),
-        backgroundColor: Colors.redAccent,),
+        title: Text('Book Service', style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.redAccent,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Select Service Date', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: () async {
+            const SizedBox(height: 20),
+            // Date Selection Section
+            _buildSectionHeader('Select Service Date', Icons.calendar_today),
+            const SizedBox(height: 10),
+            _buildDateTimeButton(
+              context,
+              _selectedDate == null
+                  ? 'Choose Date'
+                  : '${_selectedDate!.day}-${_selectedDate!.month}-${_selectedDate!.year}',
+                  () async {
                 final date = await showDatePicker(
                   context: context,
                   initialDate: DateTime.now(),
@@ -208,28 +143,94 @@ Thank you for choosing us!
                 );
                 setState(() => _selectedDate = date);
               },
-              child: Text(_selectedDate == null
-                  ? 'Choose Date'
-                  : '${_selectedDate!.day}-${_selectedDate!.month}-${_selectedDate!.year}'),
             ),
-            SizedBox(height: 20),
-            Text('Select Service Time', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: () async {
-                final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+
+            const SizedBox(height: 100),
+
+            // Time Selection Section
+            _buildSectionHeader('Select Service Time', Icons.access_time),
+            const SizedBox(height: 10),
+            _buildDateTimeButton(
+              context,
+              _selectedTime == null ? 'Choose Time' : _selectedTime!.format(context),
+                  () async {
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay.now(),
+                );
                 setState(() => _selectedTime = time);
               },
-              child: Text(_selectedTime == null ? 'Choose Time' : _selectedTime!.format(context)),
             ),
-            SizedBox(height: 40),
+
+            const Spacer(),
+
+            // Book Service Button
             Center(
               child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 3,
+                ),
                 onPressed: _confirmBooking,
-                child: Text('Book Service'),
+                child: const Text(
+                  'CONFIRM BOOKING',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.redAccent, size: 28),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateTimeButton(BuildContext context, String text, VoidCallback onPressed) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black87,
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.grey.shade300),
+          ),
+          elevation: 2,
+        ),
+        onPressed: onPressed,
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 16,
+            color: text.startsWith('Choose') ? Colors.grey.shade600 : Colors.black87,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );
